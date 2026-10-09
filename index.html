@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sign In — Shaha Finlease Collection Intelligence</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #09090b;
+      --text-muted: #64748b;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px 28px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+    }
+    .brand-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .brand-badge {
+      display: inline-block;
+      background: #09090b;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .brand-sub {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      transition: border 0.12s ease;
+      background: #ffffff;
+    }
+    .form-input:focus {
+      border-color: #09090b;
+    }
+    .btn-login {
+      width: 100%;
+      padding: 11px;
+      background: #09090b;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.12s ease;
+      margin-top: 6px;
+    }
+    .btn-login:hover {
+      background: #27272a;
+    }
+    .btn-login:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .error-msg {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .quick-roles {
+      margin-top: 24px;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .quick-roles-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .role-pills-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .role-pill-btn {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.1s ease;
+    }
+    .role-pill-btn:hover {
+      background: #09090b;
+      color: #ffffff;
+      border-color: #09090b;
+    }
+    .public-links {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 18px;
+      font-size: 12px;
+    }
+    .public-link {
+      color: #475569;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .public-link:hover {
+      color: #09090b;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="brand-header">
+      <span class="brand-badge">SHAHA FINLEASE</span>
+      <h1 class="brand-title">Collection Intelligence Floor</h1>
+      <p class="brand-sub">Sign in to access your role-optimized desk</p>
+    </div>
+
+    <div id="loginError" class="error-msg"></div>
+
+    <form id="loginForm" onsubmit="handleLoginSubmit(event)">
+      <div class="form-group">
+        <label class="form-label" for="usernameInput">Username</label>
+        <input type="text" id="usernameInput" class="form-input" placeholder="e.g. ambuj, rohit, tejas, satish" required autocomplete="username">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="passwordInput">Password / PIN</label>
+        <input type="password" id="passwordInput" class="form-input" placeholder="Enter password" required autocomplete="current-password">
+      </div>
+
+      <button type="submit" id="btnSubmit" class="btn-login">Sign In →</button>
+    </form>
+
+    <!-- Quick Role Demo Selectors -->
+    <div class="quick-roles">
+      <div class="quick-roles-title">Fast Role Shortcuts</div>
+      <div class="role-pills-grid">
+        <button type="button" class="role-pill-btn" onclick="fillRole('ambuj', '1234')">Ambuj (Manager)</button>
+        <button type="button" class="role-pill-btn" onclick="fillRole('rohit', '1234')">Rohit (Viewer)</button>
+        <button type="button" class="role-pill-btn" onclick="fillRole('tejas', '1234')">Tejas (MIS)</button>
+        <button type="button" class="role-pill-btn" onclick="fillRole('satish', '1234')">Satish (Admin)</button>
+      </div>
+    </div>
+
+    <!-- Direct Satellite Displays -->
+    <div class="public-links">
+      <a href="leaderboard.html" class="public-link">🏆 Leaderboard</a>
+      <a href="aod.html" class="public-link">📺 TV Display</a>
+    </div>
+  </div>
+
+  <script>
+    var SUPABASE_URL = "https://vrpdsxmuqjxjarruujkl.supabase.co";
+    var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZycGRzeG11cWp4amFycnV1amtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTg5ODEsImV4cCI6MjEwNjQ5NDk4MX0.VMCkbrC_jBEsDYyKGg-I6J9ncRkeWytBJpca-GhDV7s";
+
+    // Auto-Redirect if already logged in
+    (function checkExistingSession() {
+      try {
+        var raw = localStorage.getItem('shaha_active_user');
+        if (raw) {
+          var user = JSON.parse(raw);
+          if (user && user.role) {
+            routeUserToView(user);
+          }
+        }
+      } catch(e) {}
+    })();
+
+    function routeUserToView(user) {
+      var role = (user.role || 'manager').toLowerCase();
+      var uname = (user.username || '').toLowerCase();
+
+      if (role === 'viewer' || uname === 'rohit') {
+        window.location.replace('viewer.html');
+      } else if (role === 'admin' || role === 'mis' || role === 'editor' || uname === 'satish' || uname === 'tejas' || uname === 'samarth') {
+        window.location.replace('admin.html');
+      } else {
+        // Floor Manager (Ambuj, Poonam, Smita, Omkar, Aditi, etc.)
+        window.location.replace('manager.html');
+      }
+    }
+
+    function fillRole(u, p) {
+      document.getElementById('usernameInput').value = u;
+      document.getElementById('passwordInput').value = p;
+      document.getElementById('btnSubmit').click();
+    }
+
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      var uInp = document.getElementById('usernameInput');
+      var pInp = document.getElementById('passwordInput');
+      var errBox = document.getElementById('loginError');
+      var btn = document.getElementById('btnSubmit');
+
+      var u = uInp.value.trim().toLowerCase();
+      var p = pInp.value.trim();
+
+      errBox.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Verifying...';
+
+      // 1. Check local static credentials fallback for 0ms verification
+      var localUsers = {
+        'satish': { username: 'satish', role: 'admin', displayName: 'Satish (Admin)', managerKey: 'all', pass: '1234' },
+        'samarth': { username: 'samarth', role: 'admin', displayName: 'Samarth (Admin)', managerKey: 'all', pass: '1234' },
+        'tejas': { username: 'tejas', role: 'mis', displayName: 'Tejas (MIS)', managerKey: 'all', pass: '1234' },
+        'rohit': { username: 'rohit', role: 'viewer', displayName: 'Rohit (Viewer)', managerKey: 'all', pass: '1234' },
+        'dhruv': { username: 'dhruv', role: 'editor', displayName: 'Dhruv (Customer Service)', managerKey: 'all', pass: '1234' },
+        'ambuj': { username: 'ambuj', role: 'manager', displayName: 'Ambuj (Manager)', managerKey: 'ambuj', pass: '1234' },
+        'poonam': { username: 'poonam', role: 'manager', displayName: 'Poonam (Manager)', managerKey: 'poonam', pass: '1234' },
+        'omkar': { username: 'omkar', role: 'manager', displayName: 'Omkar (Manager)', managerKey: 'omkar', pass: '1234' },
+        'smita': { username: 'smita', role: 'manager', displayName: 'Smita (Manager)', managerKey: 'smita', pass: '1234' },
+        'aditi': { username: 'aditi', role: 'manager', displayName: 'Aditi (Manager)', managerKey: 'aditi', pass: '1234' },
+        'shravanti': { username: 'shravanti', role: 'manager', displayName: 'Shravanti (Manager)', managerKey: 'shravanti', pass: '1234' },
+        'shweta': { username: 'shweta', role: 'manager', displayName: 'Shweta (Manager)', managerKey: 'shweta', pass: '1234' },
+        'customerservice': { username: 'customerservice', role: 'manager', displayName: 'Customer Service', managerKey: 'customerservice', pass: '1234' },
+        'saroj': { username: 'saroj', role: 'manager', displayName: 'Saroj (Manager)', managerKey: 'saroj', pass: '1234' }
+      };
+
+      var userObj = null;
+
+      // 2. Try Supabase verification
+      try {
+        var res = await fetch(SUPABASE_URL + '/rest/v1/users?username=eq.' + encodeURIComponent(u) + '&limit=1', {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+          }
+        });
+        if (res.ok) {
+          var data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            var dbUser = data[0];
+            if (dbUser.password === p) {
+              userObj = {
+                id: dbUser.id,
+                username: dbUser.username,
+                role: dbUser.role,
+                displayName: dbUser.display_name || dbUser.username,
+                managerKey: dbUser.manager_key || dbUser.username
+              };
+            }
+          }
+        }
+      } catch(err) {
+        console.warn("Supabase auth offline fallback:", err);
+      }
+
+      // 3. Fallback to local table if Supabase offline or match found
+      if (!userObj && localUsers[u] && localUsers[u].pass === p) {
+        userObj = {
+          username: localUsers[u].username,
+          role: localUsers[u].role,
+          displayName: localUsers[u].displayName,
+          managerKey: localUsers[u].managerKey
+        };
+      }
+
+      if (userObj) {
+        localStorage.setItem('shaha_active_user', JSON.stringify(userObj));
+        routeUserToView(userObj);
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Sign In →';
+        errBox.textContent = 'Invalid username or password. Please try again.';
+        errBox.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>

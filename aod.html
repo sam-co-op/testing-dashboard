@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SHAHA FINLEASE · Always On Display (AOD)</title>
+  <link rel="icon" type="image/png" href="shaha_finlease_logo.png">
+  <!-- Supabase Realtime Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* ==========================================================================
+       ALWAYS ON DISPLAY (AOD) · SPATIAL COMMAND CENTER
+       Strict Monochrome Dieter Rams / Edward Tufte Executive Design System
+       ========================================================================== */
+    :root {
+      --bg: #f8f9fa;
+      --card-bg: #ffffff;
+      --border: #e4e4e7;
+      --border-dark: #09090b;
+      --text: #09090b;
+      --text-muted: #71717a;
+      --radius: 8px;
+      --radius-lg: 10px;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden; /* STRICT NO-SCROLL SINGLE SCREEN COMMAND CENTER */
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+
+    .tabular {
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
+
+    @keyframes aodPulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    /* MAIN CONTAINER */
+    .aod-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 10px 14px;
+      gap: 10px;
+    }
+
+    /* TOP HEADER */
+    .aod-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      flex-shrink: 0;
+      height: 46px;
+    }
+
+    .aod-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .aod-live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: #09090b;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 6px;
+    }
+
+    .aod-pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ffffff;
+      display: inline-block;
+      animation: aodPulse 1.8s infinite ease-in-out;
+    }
+
+    .aod-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #09090b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: -0.01em;
+    }
+
+    .aod-divider {
+      color: #a1a1aa;
+      font-weight: 400;
+      margin: 0 2px;
+    }
+
+    .aod-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .aod-date-badge {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #27272a;
+      background: #f4f4f5;
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .aod-clock {
+      font-size: 15px;
+      font-weight: 800;
+      color: #09090b;
+      background: #ffffff;
+      border: 1px solid #09090b;
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+
+    .aod-btn {
+      background: #ffffff;
+      color: #09090b;
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .aod-btn:hover {
+      background: #f4f4f5;
+      border-color: #09090b;
+    }
+
+    .aod-btn-solid {
+      background: #09090b;
+      color: #ffffff;
+      border-color: #09090b;
+    }
+
+    .aod-btn-solid:hover {
+      background: #27272a;
+      border-color: #27272a;
+    }
+
+    .aod-kbd-tag {
+      font-size: 9px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.22);
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+    }
+
+    /* UPPER GRID */
+    .aod-upper-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 10px;
+      flex: 1;
+      min-height: 0;
+      align-items: stretch;
+    }
+
+    .aod-left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .aod-right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      height: 100%;
+      min-height: 0;
+      flex: 1;
+    }
+
+    .aod-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* Left Card 1: Hero Total Floor */
+    .aod-hero-card {
+      padding: 12px 16px;
+      text-align: center;
+      justify-content: space-between;
+      position: relative;
+      flex: 1.1;
+      border-top: 2px solid #09090b;
+    }
+
+    .aod-hero-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .aod-card-tag {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #09090b;
+    }
+
+    .aod-tag-pill {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 6px;
+      display: inline-block;
+      background: #f4f4f5;
+      color: #09090b;
+      border: 1px solid var(--border);
+    }
+
+    .aod-hero-center-metric {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 2px 0 4px;
+    }
+
+    .aod-hero-big-number {
+      font-size: 46px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: #09090b;
+      line-height: 1.05;
+      margin: 4px 0 2px;
+    }
+
+    .aod-hero-yday-bracket {
+      font-size: 15px;
+      font-weight: 700;
+      color: #71717a;
+      margin-top: 1px;
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
+    }
+
+    .aod-hero-sub {
+      font-size: 11.5px;
+      color: #71717a;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .aod-yesterday-pill-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      margin-top: 4px;
+    }
+
+    .aod-yesterday-diff {
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 3px 12px;
+      border-radius: 20px;
+      border: 1px solid #09090b;
+      background: #09090b;
+      color: #ffffff;
+    }
+
+    /* Left Card 2: Shift Targets & Velocity */
+    .aod-velocity-card {
+      padding: 10px 14px;
+      flex: 1;
+      justify-content: space-between;
+      position: relative;
+      border-top: 2px solid #27272a;
+    }
+
+    .aod-card-title-compact {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #09090b;
+      margin-bottom: 4px;
+    }
+
+    .aod-target-pct-pill {
+      font-size: 10px;
+      font-weight: 800;
+      color: #09090b;
+      background: #f4f4f5;
+      border: 1px solid var(--border);
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
+
+    .aod-pacing-bar-wrap {
+      margin-bottom: 6px;
+    }
+
+    .aod-pacing-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #71717a;
+      margin-bottom: 3px;
+    }
+
+    .aod-progress-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .aod-progress-fill {
+      height: 100%;
+      background: #09090b;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    .aod-velocity-metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .aod-metric-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 9px;
+      text-align: left;
+    }
+
+    .aod-metric-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: #71717a;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      line-height: 1.2;
+    }
+
+    .aod-metric-val {
+      font-size: 13px;
+      font-weight: 800;
+      color: #09090b;
+      margin-top: 2px;
+      line-height: 1.2;
+    }
+
+    .aod-metric-sub {
+      font-size: 9.5px;
+      color: #71717a;
+      font-weight: 600;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Right Deck Bar & Tab Switcher */
+    .aod-deck-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 8px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      flex-shrink: 0;
+      height: 36px;
+    }
+
+    .aod-tab-switcher {
+      display: inline-flex;
+      background: #f4f4f5;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .aod-tab-btn {
+      background: transparent;
+      border: none;
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #71717a;
+      padding: 3px 9px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .aod-tab-btn.active {
+      background: #09090b !important;
+      color: #ffffff !important;
+    }
+
+    .aod-badge-secondary {
+      font-size: 9.5px;
+      font-weight: 800;
+      background: #e4e4e7;
+      color: #3f3f46;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #d4d4d8;
+    }
+
+    .aod-tab-btn.active .aod-badge-secondary {
+      background: rgba(255, 255, 255, 0.22) !important;
+      color: #ffffff !important;
+      border-color: transparent !important;
+    }
+
+    /* Tables Container */
+    .aod-tables-container {
+      display: grid;
+      grid-template-columns: minmax(360px, 1fr) minmax(420px, 1.25fr);
+      gap: 10px;
+      flex: 1;
+      min-height: 0;
+      height: calc(100% - 44px);
+    }
+
+    .aod-tables-container.single-branch-mode {
+      display: block;
+    }
+
+    .aod-tables-container.single-manager-mode {
+      display: block;
+    }
+
+    .aod-table-card {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .aod-card-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #09090b;
+      padding: 6px 12px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .aod-table-scroll {
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .aod-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+    }
+
+    .aod-table th {
+      padding: 6px 8px !important;
+      font-size: 10px !important;
+      font-weight: 800 !important;
+      color: #52525b !important;
+      background: #f8fafc !important;
+      border-bottom: 1px solid var(--border) !important;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .aod-table td {
+      padding: 5px 8px !important;
+      font-size: 11.5px !important;
+      line-height: 1.3 !important;
+      border-bottom: 1px solid #f4f4f5 !important;
+      color: #09090b;
+    }
+
+    .aod-table tr:hover td {
+      background: #f4f4f5 !important;
+    }
+
+    .aod-table tfoot td {
+      padding: 6px 8px !important;
+      font-size: 12px !important;
+      font-weight: 800 !important;
+      border-top: 2px solid #09090b !important;
+      background: #f8fafc !important;
+      position: sticky;
+      bottom: 0;
+      z-index: 2;
+    }
+
+    .aod-share-pill {
+      background: #f4f4f5;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 800;
+      border: 1px solid var(--border);
+      font-size: 10px;
+      color: #09090b;
+      display: inline-block;
+    }
+
+    /* Branch Analytics Grid */
+    .aod-branch-analytics-grid {
+      display: none;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 10px 12px;
+      background: #fafafa;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .aod-branch-metric-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 9px;
+    }
+
+    /* LOWER SECTION: Top 5 Performers Podium Deck */
+    .aod-lower-deck {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 6px 12px 8px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+      flex-shrink: 0;
+    }
+
+    .aod-lower-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #f4f4f5;
+    }
+
+    .aod-scope-btn {
+      font-size: 10.5px;
+      padding: 2px 8px;
+      font-weight: 700;
+      border-radius: 5px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: #71717a;
+      transition: all 0.15s ease;
+    }
+
+    .aod-scope-btn.active {
+      background: #09090b !important;
+      color: #ffffff !important;
+      border-color: #09090b !important;
+    }
+
+    .aod-top5-deck {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .aod-top5-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px 9px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      min-width: 0;
+      transition: all 0.15s ease;
+    }
+
+    .aod-top5-card:hover {
+      border-color: #09090b;
+    }
+
+    .aod-top5-card.rank-1 {
+      border: 1.5px solid #09090b;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .aod-top5-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+
+    .aod-top5-rank-badge {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #09090b;
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .aod-top5-rank-badge.rank-1-badge { background: #09090b; color: #ffffff; }
+    .aod-top5-rank-badge.rank-2-badge { background: #27272a; color: #ffffff; }
+    .aod-top5-rank-badge.rank-3-badge { background: #52525b; color: #ffffff; }
+    .aod-top5-rank-badge.rank-other-badge { background: #f4f4f5; color: #18181b; border: 1px solid var(--border); }
+
+    .aod-top5-leader-pill {
+      font-size: 9px;
+      font-weight: 800;
+      background: #09090b;
+      color: #ffffff;
+      padding: 1px 6px;
+      border-radius: 10px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .aod-top5-card-name {
+      font-size: 12px;
+      font-weight: 800;
+      color: #09090b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 1px;
+    }
+
+    .aod-top5-card-sub {
+      font-size: 10px;
+      font-weight: 600;
+      color: #71717a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 3px;
+    }
+
+    .aod-top5-card-amt {
+      font-size: 15px;
+      font-weight: 900;
+      color: #09090b;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .aod-top5-card-yday {
+      font-size: 11px;
+      font-weight: 600;
+      color: #71717a;
+      margin-top: 2px;
+      line-height: 1.1;
+    }
+
+    .ellipsis {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Embedded Mode Adjustments */
+    body.is-embedded {
+      background: #000000;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="aod-container" id="aodMainWrapper">
+    <!-- TOP HEADER -->
+    <header class="aod-header">
+      <div class="aod-header-left">
+        <div class="aod-live-pill">
+          <span class="aod-pulse-dot"></span>
+          <span>LIVE FLOOR</span>
+        </div>
+        <div class="aod-title">
+          SHAHA FINLEASE <span class="aod-divider">/</span> <span id="aodManagerTitle">EXECUTIVE FLOOR</span>
+        </div>
+      </div>
+
+      <div class="aod-header-right">
+        <span id="aodDateDisplay" class="aod-date-badge">--</span>
+        <span id="aodClockDisplay" class="aod-clock tabular">00:00:00</span>
+
+        <button type="button" class="aod-btn" onclick="toggleFullscreen()" id="btnFullscreenToggle" title="Toggle Fullscreen (F11)">
+          <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          <span id="btnFullscreenLabel">Full Screen</span>
+        </button>
+
+        <a href="leaderboard.html" class="aod-btn" id="btnAodLeaderboard" title="Open Managers & Callers Performance Leaderboard">
+          🏆 Leaderboard
+        </a>
+
+        <a href="manager.html" class="aod-btn aod-btn-solid" id="btnReturnToManagerDesk" title="Open Floor Manager Dashboard">
+          <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Manager Desk
+        </a>
+
+        <button type="button" class="aod-btn aod-btn-solid" id="btnCloseEmbeddedAod" style="display:none;" onclick="closeEmbeddedAod()" title="Exit Always On Display">
+          ✕ Exit AOD <kbd class="aod-kbd-tag">ESC</kbd>
+        </button>
+      </div>
+    </header>
+
+    <!-- UPPER GRID: Left Stats + Right Tables -->
+    <div class="aod-upper-grid">
+      <!-- LEFT COLUMN -->
+      <aside class="aod-left-col">
+        <!-- Card 1: Today's Floor Recovery Hero Card -->
+        <div class="aod-card aod-hero-card">
+          <div class="aod-hero-header">
+            <span class="aod-card-tag">TODAY'S FLOOR RECOVERY</span>
+            <span class="aod-tag-pill">Floor Realtime</span>
+          </div>
+          <div class="aod-hero-center-metric">
+            <div id="aodBigFloorTodayVal" class="aod-hero-big-number tabular">₹ 0</div>
+            <div id="aodBigFloorYesterdayBracket" class="aod-hero-yday-bracket tabular">(₹ 0 Yesterday)</div>
+          </div>
+          <div class="aod-yesterday-pill-wrap">
+            <span id="aodFloorYesterdayDiffPill" class="aod-yesterday-diff tabular">--</span>
+          </div>
+          <div class="aod-hero-sub">
+            <span id="aodFloorContributorsText">0 callers active today across all branches</span>
+          </div>
+        </div>
+
+        <!-- Card 2: Shift Targets & Velocity -->
+        <div class="aod-card aod-velocity-card">
+          <div class="aod-card-title-compact">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>SHIFT TARGETS & VELOCITY</span>
+            </div>
+            <span id="aodFloorTargetPctVal" class="aod-target-pct-pill tabular">0% Pacing</span>
+          </div>
+          
+          <div class="aod-pacing-bar-wrap">
+            <div class="aod-pacing-labels">
+              <span>Target Progress</span>
+              <span id="aodFloorTargetVal" class="tabular">₹ 0</span>
+            </div>
+            <div class="aod-progress-track">
+              <div id="aodTargetProgressBar" class="aod-progress-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- 2-Column Metrics Grid -->
+          <div class="aod-velocity-metrics-grid">
+            <div class="aod-metric-box">
+              <div class="aod-metric-label">SHIFT PROJECTION</div>
+              <div id="aodFloorProjVal" class="aod-metric-val tabular">₹ 0</div>
+            </div>
+            <div class="aod-metric-box">
+              <div class="aod-metric-label">AVG / ACTIVE CALLER</div>
+              <div id="aodFloorAvgCallerVal" class="aod-metric-val tabular">₹ 0</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- RIGHT COLUMN: Branch Wise & Manager Tables -->
+      <main class="aod-right-col">
+        <!-- Deck Header with 3 View Switchers -->
+        <div class="aod-deck-bar">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="22.01"/><line x1="15" y1="22" x2="15" y2="22.01"/><line x1="8" y1="6" x2="10" y2="6"/><line x1="14" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/></svg>
+            <div class="aod-tab-switcher">
+              <button type="button" id="aodTabBtnSplit" class="aod-tab-btn active" onclick="switchAodTable('split')">
+                SPLIT VIEW <span class="aod-badge-secondary">All-In-One</span>
+              </button>
+              <button type="button" id="aodTabBtnBranch" class="aod-tab-btn" onclick="switchAodTable('branch')">
+                BRANCH WISE <span id="aodBranchCountBadge" class="aod-badge-secondary">5 Branches</span>
+              </button>
+              <button type="button" id="aodTabBtnMgr" class="aod-tab-btn" onclick="switchAodTable('manager')">
+                MANAGERS <span id="aodMgrCountBadge" class="aod-badge-secondary">All Managers</span>
+              </button>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span id="aodBranchFloorPill" class="tabular aod-tag-pill">Floor Live</span>
+          </div>
+        </div>
+
+        <!-- Tables Deck Container -->
+        <div id="aodTablesContainer" class="aod-tables-container split-mode">
+          <!-- CARD 1: Branch Wise Performance -->
+          <div id="aodBranchTableWrap" class="aod-card aod-table-card" style="display:flex; flex-direction:column; height:100%;">
+            <div class="aod-card-title">
+              <span>BRANCH WISE PERFORMANCE</span>
+              <span class="aod-badge-secondary">5 Branches</span>
+            </div>
+            <div class="aod-table-scroll" style="flex:1;">
+              <table class="aod-table">
+                <thead>
+                  <tr>
+                    <th style="width:32px; text-align:center;">#</th>
+                    <th>BRANCH</th>
+                    <th style="text-align:right; width:100px;">TARGET (₹)</th>
+                    <th style="text-align:right; width:95px;">YESTERDAY (₹)</th>
+                    <th style="text-align:right; width:95px;">SDLM (₹)</th>
+                    <th style="text-align:right; width:125px;">TODAY (₹)<br><span style="font-size:9px; font-weight:600; text-transform:none; color:#71717a;">(Yesterday in brackets)</span></th>
+                    <th style="text-align:center; width:95px;">% SHARE</th>
+                  </tr>
+                </thead>
+                <tbody id="aodBranchTableBody">
+                  <!-- Dynamic Rows -->
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td></td>
+                    <td>GRAND FLOOR TOTAL</td>
+                    <td id="aodTfootTotalTarget" style="text-align:right;" class="tabular">₹ 0</td>
+                    <td id="aodTfootTotalYesterday" style="text-align:right;" class="tabular">₹ 0</td>
+                    <td id="aodTfootTotalSdlm" style="text-align:right;" class="tabular">₹ 0</td>
+                    <td id="aodTfootTotalToday" style="text-align:right; color:#09090b; font-weight:900;" class="tabular">
+                      <div id="aodTfootTotalTodayNum">₹ 0</div>
+                      <div id="aodTfootTotalYesterdayNum" style="font-size:10.5px; font-weight:600; color:#71717a; margin-top:1px;">(₹ 0)</div>
+                    </td>
+                    <td style="text-align:center;" class="tabular"><span class="aod-share-pill">100%</span></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- Branch Analytics Insights Deck (in single branch mode) -->
+            <div id="aodBranchAnalyticsGrid" class="aod-branch-analytics-grid">
+              <div class="aod-branch-metric-card">
+                <div class="aod-metric-label">TOP PERFORMING BRANCH</div>
+                <div id="aodBranchTopBranchVal" class="aod-metric-val ellipsis">--</div>
+                <div id="aodBranchTopBranchSub" class="aod-metric-sub">--</div>
+              </div>
+              <div class="aod-branch-metric-card">
+                <div class="aod-metric-label">FLOOR RUN-RATE vs YDAY</div>
+                <div id="aodBranchRunRateVal" class="aod-metric-val tabular">--</div>
+                <div id="aodBranchRunRateSub" class="aod-metric-sub">--</div>
+              </div>
+              <div class="aod-branch-metric-card">
+                <div class="aod-metric-label">HQ FLOOR vs BRANCHES</div>
+                <div id="aodBranchHqVsBranchesVal" class="aod-metric-val tabular">--</div>
+                <div class="aod-metric-sub">Jogeshwari vs Dadar/Other</div>
+              </div>
+              <div class="aod-branch-metric-card">
+                <div class="aod-metric-label">ACTIVE LOCATIONS</div>
+                <div id="aodBranchActiveCountVal" class="aod-metric-val tabular">--</div>
+                <div class="aod-metric-sub">Branches with collections today</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 2: Manager Floor Leaderboard -->
+          <div id="aodManagerTableWrap" class="aod-card aod-table-card" style="display:flex; flex-direction:column; height:100%;">
+            <div class="aod-card-title">
+              <span>MANAGERS LEADERBOARD</span>
+              <span class="aod-badge-secondary">All Teams</span>
+            </div>
+            <div class="aod-table-scroll" style="flex:1;">
+              <table class="aod-table">
+                <thead>
+                  <tr>
+                    <th style="width:30px; text-align:center;">#</th>
+                    <th>MANAGER</th>
+                    <th style="width:110px;">BRANCH</th>
+                    <th style="text-align:right; width:95px;">PROJECTION (₹)</th>
+                    <th style="text-align:right; width:90px;">YDAY (₹)</th>
+                    <th style="text-align:right; width:120px;">TODAY (₹)<br><span style="font-size:9px; font-weight:600; text-transform:none; color:#71717a;">(Yday below)</span></th>
+                    <th style="text-align:center; width:95px;">% SHARE</th>
+                  </tr>
+                </thead>
+                <tbody id="aodManagerTableBody">
+                  <!-- Dynamic Rows -->
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td></td>
+                    <td>FLOOR TOTAL</td>
+                    <td style="color:#71717a; font-size:10.5px;">All Branches</td>
+                    <td id="aodMgrTfootTotalProj" style="text-align:right;" class="tabular">₹ 0</td>
+                    <td id="aodMgrTfootTotalYesterday" style="text-align:right;" class="tabular">₹ 0</td>
+                    <td id="aodMgrTfootTotalToday" style="text-align:right; color:#09090b; font-weight:900;" class="tabular">
+                      <div id="aodMgrTfootTotalTodayNum">₹ 0</div>
+                      <div id="aodMgrTfootTotalYesterdayNum" style="font-size:10.5px; font-weight:600; color:#71717a; margin-top:1px;">(₹ 0)</div>
+                    </td>
+                    <td style="text-align:center;" class="tabular"><span class="aod-share-pill">100%</span></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- LOWER SECTION: Top 5 Performers Podium Deck -->
+    <footer class="aod-lower-deck">
+      <div class="aod-lower-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg style="width:13px;height:13px;color:#09090b;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span style="font-weight:800; font-size:12px; letter-spacing:0.04em;">TOP 5 PERFORMERS TODAY</span>
+          <span id="aodTop5ScopeBadge" class="aod-badge-secondary">Floor Leaders</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button type="button" class="aod-scope-btn active" id="btnAodScopeFloor" onclick="toggleAodTop5Scope('floor')">All Floor</button>
+          <button type="button" class="aod-scope-btn" id="btnAodScopeTeam" onclick="toggleAodTop5Scope('team')">My Team</button>
+        </div>
+      </div>
+      <div id="aodTop5Container" class="aod-top5-deck">
+        <!-- Dynamic Top 5 Cards -->
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ==========================================================================
+    // STANDALONE AOD JAVASCRIPT ENGINE
+    // ==========================================================================
+    var SUPABASE_URL = "https://vrpdsxmuqjxjarruujkl.supabase.co";
+    var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZycGRzeG11cWp4amFycnV1amtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTg5ODEsImV4cCI6MjEwNjQ5NDk4MX0.VMCkbrC_jBEsDYyKGg-I6J9ncRkeWytBJpca-GhDV7s";
+
+    var MANAGER_NAMES = {
+      'ambuj': "AMBUJ MISHRA",
+      'poonam': "POONAM",
+      'omkar': "OMKAR",
+      'smita': "SMITA",
+      'aditi': "ADITI",
+      'shravanti': "SHRAVANTI",
+      'shweta': "SHWETA",
+      'anuraddha': "ANURADDHA",
+      'customerservice': "CUSTOMER SERVICE",
+      'saroj': "SAROJ",
+      'satish': "SATISH P"
+    };
+
+    var RAW_MANAGERS_ORDER = [
+      'ambuj', 'poonam', 'omkar', 'smita', 'aditi', 'shravanti', 'shweta', 'anuraddha', 'customerservice', 'saroj', 'satish'
+    ];
+
+    var DEFAULT_YESTERDAY_BRANCHES = {
+      'jogeshwari': 170000,
+      'dadar': 65000,
+      'agencies': 25000,
+      'saroj': 0,
+      'bangalore': 0
+    };
+
+    var DEFAULT_YESTERDAY_MANAGERS = {
+      'ambuj': 55000,
+      'smita': 65000,
+      'shweta': 35000,
+      'aditi': 30000,
+      'omkar': 25000,
+      'poonam': 25000,
+      'customerservice': 15000,
+      'shravanti': 10000,
+      'anuraddha': 0,
+      'saroj': 0,
+      'satish': 0
+    };
+
+    var CORE_BRANCH_DEFINITIONS = [
+      { key: 'jogeshwari', name: 'Jogeshwari', badge: 'HQ Floor', desc: 'Jogeshwari HQ' },
+      { key: 'dadar', name: 'Dadar', badge: 'Branch Office', desc: 'Dadar Branch' },
+      { key: 'agencies', name: 'Agencies', badge: 'Partners', desc: 'Agencies & Partners' },
+      { key: 'saroj', name: 'Saroj', badge: 'Special Vertical', desc: 'Saroj Desk' }
+    ];
+
+    // State
+    var allFloorCallers = [];
+    var allLoadedCallers = [];
+    var teamCallers = [];
+    var allManagerProjections = {};
+    var customBranches = [];
+    var managerBranchMap = {};
+    var deletedManagers = [];
+    var currentManagerKey = 'ambuj';
+    var _aodTop5Scope = 'floor';
+    var _currentAodTable = 'split';
+    var activeDateStr = getTodayDateString();
+    var aodClockInterval = null;
+    var aodPollInterval = null;
+    var _sbRealtimeClient = null;
+
+    // URL Param extraction
+    var urlParams = new URLSearchParams(window.location.search);
+    var isEmbedded = urlParams.get('embed') === 'true';
+    var requestedManager = urlParams.get('manager');
+    var requestedMode = urlParams.get('mode');
+
+    if (requestedManager && MANAGER_NAMES[requestedManager.toLowerCase()]) {
+      currentManagerKey = requestedManager.toLowerCase();
+    }
+    if (requestedMode && (requestedMode === 'branch' || requestedMode === 'manager' || requestedMode === 'split')) {
+      _currentAodTable = requestedMode;
+    }
+
+    if (isEmbedded) {
+      document.body.classList.add('is-embedded');
+      var returnBtn = document.getElementById('btnReturnToManagerDesk');
+      if (returnBtn) returnBtn.style.display = 'none';
+      var closeBtn = document.getElementById('btnCloseEmbeddedAod');
+      if (closeBtn) closeBtn.style.display = 'inline-flex';
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function formatIndianCurrency(num) {
+      var val = Math.round(Number(num) || 0);
+      var sign = val < 0 ? '-' : '';
+      val = Math.abs(val);
+      var s = val.toString();
+      var lastThree = s.substring(s.length - 3);
+      var otherNumbers = s.substring(0, s.length - 3);
+      if (otherNumbers !== '') {
+        lastThree = ',' + lastThree;
+      }
+      var res = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThree;
+      return sign + '₹ ' + res;
+    }
+
+    function getTodayDateString() {
+      var d = new Date();
+      var year = d.getFullYear();
+      var month = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
+
+    function getYesterdayDateString(currentDateStr) {
+      var d;
+      if (currentDateStr && currentDateStr.indexOf('-') !== -1) {
+        var parts = currentDateStr.split('-');
+        d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      } else {
+        d = new Date();
+      }
+      d.setDate(d.getDate() - 1);
+      var year = d.getFullYear();
+      var month = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
+
+    // Supabase REST Fetch helper
+    async function sbFetch(path, options) {
+      var opt = options || {};
+      var headers = Object.assign({
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      }, opt.headers || {});
+
+      var url = SUPABASE_URL + '/rest/v1/' + path;
+      var res = await fetch(url, {
+        method: opt.method || 'GET',
+        headers: headers,
+        body: opt.body ? (typeof opt.body === 'string' ? opt.body : JSON.stringify(opt.body)) : undefined
+      });
+      if (!res.ok) {
+        var errBody = await res.text();
+        throw new Error('Supabase ' + res.status + ': ' + errBody);
+      }
+      var text = await res.text();
+      return text ? JSON.parse(text) : null;
+    }
+
+    function getManagerAssignedBranch(mgrKey) {
+      var k = (mgrKey || '').toLowerCase();
+      if (managerBranchMap[k]) return managerBranchMap[k];
+      if (k === 'anuraddha' && managerBranchMap['anuradha']) return managerBranchMap['anuradha'];
+      if (k === 'anuradha' && managerBranchMap['anuraddha']) return managerBranchMap['anuraddha'];
+      if (k === 'smita') return 'dadar';
+      if (k === 'poonam' || k === 'satish') return 'agencies';
+      if (k === 'saroj') return 'saroj';
+      return 'jogeshwari';
+    }
+
+    function getAllBranchDefinitions() {
+      var list = [];
+      CORE_BRANCH_DEFINITIONS.forEach(function(b) {
+        list.push({
+          key: b.key,
+          name: b.name,
+          badge: b.badge,
+          desc: b.desc,
+          isMember: function(mk) {
+            return getManagerAssignedBranch(mk) === b.key;
+          }
+        });
+      });
+
+      customBranches.forEach(function(cb) {
+        list.push({
+          key: cb.key,
+          name: cb.name,
+          badge: cb.badge || 'Branch',
+          desc: cb.desc || cb.name,
+          isMember: function(mk) {
+            return getManagerAssignedBranch(mk) === cb.key;
+          }
+        });
+      });
+
+      return list;
+    }
+
+    function getBranchTarget(branchKey) {
+      var bKey = (branchKey || '').toLowerCase();
+      try {
+        var raw = localStorage.getItem('shaha_branch_targets');
+        if (raw) {
+          var map = JSON.parse(raw);
+          if (map && map[bKey] !== undefined) return Number(map[bKey]) || 0;
+        }
+      } catch(e) {}
+      var defs = getAllBranchDefinitions();
+      var bDef = defs.find(function(b) { return b.key === bKey; });
+      if (bDef) {
+        var sumProj = 0;
+        RAW_MANAGERS_ORDER.forEach(function(mk) {
+          if (bDef.isMember(mk)) {
+            sumProj += (Number(allManagerProjections[mk]) || 0);
+          }
+        });
+        if (sumProj > 0) return sumProj;
+      }
+      return 0;
+    }
+
+    function getManagerYesterdayCollection(mgrKey) {
+      var mk = (mgrKey || '').toLowerCase();
+      var manual = localStorage.getItem('shaha_mgr_yday_' + mk);
+      if (manual !== null && manual !== undefined && manual !== '') {
+        return Number(manual) || 0;
+      }
+      try {
+        var rawMgrs = localStorage.getItem('shaha_manager_ydays');
+        if (rawMgrs) {
+          var map = JSON.parse(rawMgrs);
+          if (map && map[mk] !== undefined) return Number(map[mk]) || 0;
+        }
+      } catch(e1) {}
+      return DEFAULT_YESTERDAY_MANAGERS[mk] || 0;
+    }
+
+    function getBranchYesterdayCollection(branchKey) {
+      var bKey = (branchKey || '').toLowerCase();
+      var manual = localStorage.getItem('shaha_branch_yday_' + bKey);
+      if (manual !== null && manual !== undefined && manual !== '') {
+        return Number(manual) || 0;
+      }
+      try {
+        var raw = localStorage.getItem('shaha_branch_ydays');
+        if (raw) {
+          var map = JSON.parse(raw);
+          if (map && map[bKey] !== undefined) return Number(map[bKey]) || 0;
+        }
+      } catch(e) {}
+      var defs = getAllBranchDefinitions();
+      var bDef = defs.find(function(b) { return b.key === bKey; });
+      if (!bDef) return 0;
+      var sum = 0;
+      RAW_MANAGERS_ORDER.forEach(function(mk) {
+        if (bDef.isMember(mk)) {
+          sum += getManagerYesterdayCollection(mk);
+        }
+      });
+      if (sum > 0) return sum;
+      return DEFAULT_YESTERDAY_BRANCHES[bKey] || 0;
+    }
+
+    function getBranchSdlm(branchKey) {
+      var bKey = (branchKey || '').toLowerCase();
+      try {
+        var raw = localStorage.getItem('shaha_branch_sdlms');
+        if (raw) {
+          var map = JSON.parse(raw);
+          if (map && map[bKey] !== undefined) return Number(map[bKey]) || 0;
+        }
+      } catch(e) {}
+      if (bKey === 'jogeshwari') return 686104;
+      if (bKey === 'dadar') return 119776;
+      if (bKey === 'agencies') return 105770;
+      return 0;
+    }
+
+    function getBranchJulySdlm(branchKey) {
+      var bKey = (branchKey || '').toLowerCase();
+      try {
+        var raw = localStorage.getItem('shaha_branch_july_sdlms');
+        if (raw) {
+          var map = JSON.parse(raw);
+          if (map && map[bKey] !== undefined) return Number(map[bKey]) || 0;
+        }
+      } catch(e) {}
+      if (bKey === 'jogeshwari') return 757987;
+      if (bKey === 'dadar') return 118506;
+      if (bKey === 'agencies') return 126261;
+      return 0;
+    }
+
+    function getCallerYesterdayCollection(caller) {
+      if (!caller) return 0;
+      var yDate = getYesterdayDateString(activeDateStr || getTodayDateString());
+      try {
+        var archRaw = localStorage.getItem('shaha_daily_archive_' + yDate);
+        if (archRaw) {
+          var arch = JSON.parse(archRaw);
+          if (arch && Array.isArray(arch.callers)) {
+            var match = arch.callers.find(function(ac) {
+              if (caller.id && ac.id && String(ac.id).trim().toUpperCase() === String(caller.id).trim().toUpperCase()) return true;
+              if (caller.officer_name && ac.officer_name && caller.officer_name.trim().toLowerCase() === ac.officer_name.trim().toLowerCase()) return true;
+              return false;
+            });
+            if (match) return Number(match.amount) || 0;
+          }
+        }
+      } catch(e) {}
+      return 0;
+    }
+
+    // ------------------------------------------------------------------------
+    // DATA HYDRATION & REFRESH ENGINE
+    // ------------------------------------------------------------------------
+    async function loadAodData() {
+      try {
+        // 1. Fetch branch configs & targets
+        var resB = await sbFetch('users?username=eq.__config_branches__&limit=1');
+        if (Array.isArray(resB) && resB.length > 0) {
+          if (resB[0].display_name) {
+            try { customBranches = JSON.parse(resB[0].display_name) || []; } catch(e) {}
+          }
+          if (resB[0].manager_key) {
+            try { managerBranchMap = JSON.parse(resB[0].manager_key) || {}; } catch(e) {}
+          }
+        }
+
+        var resT = await sbFetch('users?username=eq.__config_branch_targets__&limit=1');
+        if (Array.isArray(resT) && resT.length > 0 && resT[0].display_name) {
+          try {
+            var tObj = JSON.parse(resT[0].display_name);
+            if (tObj && typeof tObj === 'object') {
+              if (tObj.targets) localStorage.setItem('shaha_branch_targets', JSON.stringify(tObj.targets));
+              if (tObj.ydays) localStorage.setItem('shaha_branch_ydays', JSON.stringify(tObj.ydays));
+              if (tObj.sdlms) localStorage.setItem('shaha_branch_sdlms', JSON.stringify(tObj.sdlms));
+              if (tObj.julySdlms) localStorage.setItem('shaha_branch_july_sdlms', JSON.stringify(tObj.julySdlms));
+              if (tObj.manager_ydays) localStorage.setItem('shaha_manager_ydays', JSON.stringify(tObj.manager_ydays));
+            }
+          } catch(e) {}
+        }
+
+        // 2. Fetch projections
+        var resP = await sbFetch('manager_projections');
+        if (Array.isArray(resP)) {
+          allManagerProjections = {};
+          resP.forEach(function(row) {
+            if (row.manager_key) {
+              allManagerProjections[row.manager_key.toLowerCase()] = Number(row.projection_amount) || 0;
+            }
+          });
+        }
+
+        // 3. Fetch callers
+        var callers = await sbFetch('callers?order=manager_key.asc,officer_name.asc');
+        if (Array.isArray(callers) && callers.length > 0) {
+          allLoadedCallers = callers;
+          allFloorCallers = callers.filter(function(c) {
+            return c.status !== 'Inactive' && c.status !== 'Hidden';
+          });
+          teamCallers = allFloorCallers.filter(function(c) {
+            return (c.manager_key || '').toLowerCase() === currentManagerKey;
+          });
+        }
+
+        renderAodView();
+      } catch(err) {
+        console.warn("Notice loading AOD data:", err);
+      }
+    }
+
+    function renderAodView() {
+      var branchDefs = getAllBranchDefinitions();
+      var floorGrandTarget = 0;
+      var floorGrandYesterday = 0;
+      var floorGrandSdlm = 0;
+      var floorGrandJulySdlm = 0;
+      var floorGrandToday = 0;
+      var branchRows = [];
+
+      branchDefs.forEach(function(bDef) {
+        var branchMgrKeys = RAW_MANAGERS_ORDER.filter(function(mk) {
+          return bDef.isMember(mk);
+        });
+
+        var bToday = 0;
+        branchMgrKeys.forEach(function(mk) {
+          var cList = allFloorCallers.filter(function(c) {
+            return (c.manager_key || '').toLowerCase() === mk;
+          });
+          cList.forEach(function(c) { bToday += Number(c.today) || 0; });
+        });
+
+        var bTarget = getBranchTarget(bDef.key);
+        var bYesterday = getBranchYesterdayCollection(bDef.key);
+        var bSdlm = getBranchSdlm(bDef.key);
+        var bJulySdlm = getBranchJulySdlm(bDef.key);
+
+        floorGrandTarget += bTarget;
+        floorGrandYesterday += bYesterday;
+        floorGrandSdlm += bSdlm;
+        floorGrandJulySdlm += bJulySdlm;
+        floorGrandToday += bToday;
+
+        branchRows.push({
+          key: bDef.key,
+          name: bDef.name,
+          badge: bDef.badge,
+          target: bTarget,
+          yesterday: bYesterday,
+          sdlm: bSdlm,
+          julySdlm: bJulySdlm,
+          today: bToday
+        });
+      });
+
+      // Calculate Manager rows
+      var mgrRows = [];
+      var floorMgrProj = 0;
+      var floorMgrYesterday = 0;
+      var floorMgrToday = 0;
+
+      RAW_MANAGERS_ORDER.forEach(function(mk) {
+        var cList = allFloorCallers.filter(function(c) {
+          return (c.manager_key || '').toLowerCase() === mk;
+        });
+        var todaySum = 0;
+        var activeCount = 0;
+        cList.forEach(function(c) {
+          if (c.status !== 'Inactive' && c.status !== 'Hidden') {
+            activeCount++;
+            todaySum += Number(c.today) || 0;
+          }
+        });
+        var projSum = Number(allManagerProjections[mk]) || 0;
+        var ydaySum = getManagerYesterdayCollection(mk);
+        var bKey = getManagerAssignedBranch(mk);
+        var bDef = branchDefs.find(function(b) { return b.key === bKey; });
+        var bName = bDef ? bDef.name : 'Jogeshwari';
+
+        floorMgrProj += projSum;
+        floorMgrYesterday += ydaySum;
+        floorMgrToday += todaySum;
+
+        mgrRows.push({
+          key: mk,
+          name: MANAGER_NAMES[mk] || mk.toUpperCase(),
+          branchName: bName,
+          proj: projSum,
+          yesterday: ydaySum,
+          today: todaySum,
+          callersCount: activeCount,
+          isCurrentManager: (mk === currentManagerKey)
+        });
+      });
+
+      // Sort managers by today collection descending
+      mgrRows.sort(function(a, b) { return b.today - a.today; });
+
+      // Update Floor Hero Card Elements
+      var bigFloorToday = document.getElementById('aodBigFloorTodayVal');
+      if (bigFloorToday) bigFloorToday.textContent = formatIndianCurrency(floorGrandToday);
+      var bigFloorYdayBracket = document.getElementById('aodBigFloorYesterdayBracket');
+      if (bigFloorYdayBracket) bigFloorYdayBracket.textContent = '(₹ ' + formatIndianCurrency(floorGrandYesterday) + ' Yesterday)';
+
+      var floorActiveCallersCount = allFloorCallers.filter(function(c) {
+        return (Number(c.today) || 0) > 0;
+      }).length;
+      var totalActiveCallersCount = allFloorCallers.length;
+
+      var floorContribEl = document.getElementById('aodFloorContributorsText');
+      if (floorContribEl) {
+        floorContribEl.textContent = floorActiveCallersCount + ' of ' + totalActiveCallersCount + ' callers active today across ' + branchDefs.length + ' branches';
+      }
+
+      var floorDiffPill = document.getElementById('aodFloorYesterdayDiffPill');
+      if (floorDiffPill) {
+        var fDiff = floorGrandToday - floorGrandYesterday;
+        if (floorGrandYesterday > 0) {
+          var fPct = ((floorGrandToday / floorGrandYesterday) * 100).toFixed(0);
+          floorDiffPill.textContent = (fDiff >= 0 ? '+' : '') + formatIndianCurrency(fDiff) + ' (' + fPct + '% vs Yday)';
+          floorDiffPill.style.color = '#ffffff';
+          floorDiffPill.style.borderColor = '#09090b';
+          floorDiffPill.style.background = '#09090b';
+        } else {
+          floorDiffPill.textContent = 'Benchmark: Previous Shift';
+          floorDiffPill.style.color = '#71717a';
+          floorDiffPill.style.borderColor = '#e4e4e7';
+          floorDiffPill.style.background = '#f4f4f5';
+        }
+      }
+
+      // Update Shift Targets & Floor Velocity Card
+      var floorTargetEl = document.getElementById('aodFloorTargetVal');
+      if (floorTargetEl) floorTargetEl.textContent = formatIndianCurrency(floorGrandTarget);
+
+      var targetPct = floorGrandTarget > 0 ? ((floorGrandToday / floorGrandTarget) * 100).toFixed(1) : '0.0';
+      var floorTargetPctEl = document.getElementById('aodFloorTargetPctVal');
+      if (floorTargetPctEl) floorTargetPctEl.textContent = targetPct + '% Pacing';
+
+      var targetProgressFill = document.getElementById('aodTargetProgressBar');
+      if (targetProgressFill) targetProgressFill.style.width = Math.min(Number(targetPct), 100) + '%';
+
+      var floorProjValEl = document.getElementById('aodFloorProjVal');
+      if (floorProjValEl) floorProjValEl.textContent = formatIndianCurrency(floorMgrProj);
+
+      var floorAvgCallerEl = document.getElementById('aodFloorAvgCallerVal');
+      if (floorAvgCallerEl) {
+        floorAvgCallerEl.textContent = floorActiveCallersCount > 0 ? formatIndianCurrency(Math.round(floorGrandToday / floorActiveCallersCount)) : '₹ 0';
+      }
+
+      // Update Branch Analytics Grid
+      var topBranchSorted = branchRows.slice().sort(function(a, b) { return b.today - a.today; });
+      var topBranch = topBranchSorted[0];
+      var bTopBranchEl = document.getElementById('aodBranchTopBranchVal');
+      var bTopBranchSub = document.getElementById('aodBranchTopBranchSub');
+      if (bTopBranchEl && topBranch) {
+        bTopBranchEl.textContent = topBranch.name;
+        if (bTopBranchSub) {
+          var tShare = floorGrandToday > 0 ? ((topBranch.today / floorGrandToday) * 100).toFixed(1) : '0';
+          bTopBranchSub.textContent = formatIndianCurrency(topBranch.today) + ' · ' + tShare + '% Floor Share';
+        }
+      }
+      var bRunRateEl = document.getElementById('aodBranchRunRateVal');
+      var bRunRateSub = document.getElementById('aodBranchRunRateSub');
+      if (bRunRateEl) {
+        var diff = floorGrandToday - floorGrandYesterday;
+        bRunRateEl.textContent = (diff >= 0 ? '+' : '') + formatIndianCurrency(diff);
+        if (bRunRateSub) {
+          var pct = floorGrandYesterday > 0 ? ((floorGrandToday / floorGrandYesterday) * 100).toFixed(0) : '0';
+          bRunRateSub.textContent = (diff >= 0 ? '+' : '') + pct + '% vs ₹ ' + formatIndianCurrency(floorGrandYesterday);
+        }
+      }
+      var bHqSub = document.getElementById('aodBranchHqVsBranchesVal');
+      if (bHqSub) {
+        var hqRow = branchRows.find(function(b) { return b.key === 'jogeshwari' || b.name.toLowerCase().indexOf('jogeshwari') !== -1; });
+        var hqAmt = hqRow ? hqRow.today : 0;
+        var hqPct = floorGrandToday > 0 ? ((hqAmt / floorGrandToday) * 100).toFixed(1) : '0';
+        var nonHqPct = floorGrandToday > 0 ? (100 - Number(hqPct)).toFixed(1) : '0';
+        bHqSub.textContent = hqPct + '% / ' + nonHqPct + '%';
+      }
+      var bActiveCount = document.getElementById('aodBranchActiveCountVal');
+      if (bActiveCount) {
+        var activeBCount = branchRows.filter(function(b) { return b.today > 0; }).length;
+        bActiveCount.textContent = activeBCount + ' of ' + branchDefs.length + ' Branches';
+      }
+
+      // Render Branch Table in AOD
+      var aodBranchTbody = document.getElementById('aodBranchTableBody');
+      var aodBranchCountBadge = document.getElementById('aodBranchCountBadge');
+      var aodBranchFloorPill = document.getElementById('aodBranchFloorPill');
+      var aodTfootTarget = document.getElementById('aodTfootTotalTarget');
+      var aodTfootYesterday = document.getElementById('aodTfootTotalYesterday');
+      var aodTfootSdlm = document.getElementById('aodTfootTotalSdlm');
+      var aodTfootTodayNum = document.getElementById('aodTfootTotalTodayNum');
+      var aodTfootYdayNum = document.getElementById('aodTfootTotalYesterdayNum');
+
+      if (aodBranchCountBadge) aodBranchCountBadge.textContent = branchDefs.length + ' Branches';
+      if (aodBranchFloorPill) aodBranchFloorPill.textContent = 'Floor Live: ' + formatIndianCurrency(floorGrandToday);
+      if (aodTfootTarget) aodTfootTarget.textContent = formatIndianCurrency(floorGrandTarget);
+      if (aodTfootYesterday) aodTfootYesterday.textContent = formatIndianCurrency(floorGrandYesterday);
+      if (aodTfootSdlm) aodTfootSdlm.textContent = formatIndianCurrency(floorGrandSdlm + floorGrandJulySdlm);
+      if (aodTfootTodayNum) aodTfootTodayNum.textContent = formatIndianCurrency(floorGrandToday);
+      if (aodTfootYdayNum) aodTfootYdayNum.textContent = '(₹ ' + formatIndianCurrency(floorGrandYesterday) + ')';
+
+      if (aodBranchTbody) {
+        var aodHtml = '';
+        branchRows.forEach(function(br, idx) {
+          var share = floorGrandToday > 0 ? (br.today / floorGrandToday) * 100 : 0;
+          aodHtml += '<tr>' +
+            '<td style="text-align:center; font-weight:700;" class="tabular">' + (idx + 1) + '</td>' +
+            '<td>' +
+              '<div style="font-weight:800; font-size:12px; color:#09090b;">' + escapeHtml(br.name) + '</div>' +
+              '<div style="font-size:10px; color:#71717a;">' + escapeHtml(br.badge) + '</div>' +
+            '</td>' +
+            '<td style="text-align:right; font-weight:700; font-size:12px;" class="tabular">' + formatIndianCurrency(br.target) + '</td>' +
+            '<td style="text-align:right; font-weight:600; font-size:12px; color:#71717a;" class="tabular">' + formatIndianCurrency(br.yesterday) + '</td>' +
+            '<td style="text-align:right; font-weight:600; font-size:12px; color:#71717a;" class="tabular">' + formatIndianCurrency(br.sdlm + br.julySdlm) + '</td>' +
+            '<td style="text-align:right;" class="tabular">' +
+              '<div style="font-weight:900; font-size:13px; color:#09090b;">' + formatIndianCurrency(br.today) + '</div>' +
+              '<div style="font-size:10.5px; font-weight:600; color:#71717a; margin-top:1px;">(₹ ' + formatIndianCurrency(br.yesterday) + ')</div>' +
+            '</td>' +
+            '<td style="text-align:center;" class="tabular">' +
+              '<div style="display:flex; align-items:center; justify-content:center; gap:5px;">' +
+                '<span style="font-size:10.5px; font-weight:700; min-width:32px; text-align:right; color:#09090b;">' + (share > 0 ? share.toFixed(1) + '%' : '0%') + '</span>' +
+                '<div style="width:34px; height:4px; background:#e4e4e7; border-radius:2px; overflow:hidden;">' +
+                  '<div style="width:' + Math.min(share, 100) + '%; height:100%; background:#09090b; border-radius:2px;"></div>' +
+                '</div>' +
+              '</div>' +
+            '</td>' +
+          '</tr>';
+        });
+        aodBranchTbody.innerHTML = aodHtml;
+      }
+
+      // Render Manager Table in AOD
+      var aodManagerTbody = document.getElementById('aodManagerTableBody');
+      var aodMgrCountBadge = document.getElementById('aodMgrCountBadge');
+      var aodMgrTfootProj = document.getElementById('aodMgrTfootTotalProj');
+      var aodMgrTfootYesterday = document.getElementById('aodMgrTfootTotalYesterday');
+      var aodMgrTfootTodayNum = document.getElementById('aodMgrTfootTotalTodayNum');
+      var aodMgrTfootYdayNum = document.getElementById('aodMgrTfootTotalYesterdayNum');
+
+      if (aodMgrCountBadge) aodMgrCountBadge.textContent = mgrRows.length + ' Managers';
+      if (aodMgrTfootProj) aodMgrTfootProj.textContent = formatIndianCurrency(floorMgrProj);
+      if (aodMgrTfootYesterday) aodMgrTfootYesterday.textContent = formatIndianCurrency(floorMgrYesterday);
+      if (aodMgrTfootTodayNum) aodMgrTfootTodayNum.textContent = formatIndianCurrency(floorMgrToday);
+      if (aodMgrTfootYdayNum) aodMgrTfootYdayNum.textContent = '(₹ ' + formatIndianCurrency(floorMgrYesterday) + ')';
+
+      if (aodManagerTbody) {
+        var aodMgrHtml = '';
+        mgrRows.forEach(function(mr, idx) {
+          var share = floorGrandToday > 0 ? (mr.today / floorGrandToday) * 100 : 0;
+          var currentPill = mr.isCurrentManager ? ' <span style="font-size:9.5px; background:#09090b; color:#ffffff; padding:1px 5px; border-radius:3px; font-weight:700;">Team</span>' : '';
+          aodMgrHtml += '<tr>' +
+            '<td style="text-align:center; font-weight:700;" class="tabular">' + (idx + 1) + '</td>' +
+            '<td><span style="font-weight:800; font-size:12px; color:#09090b;">' + escapeHtml(mr.name) + '</span>' + currentPill + '</td>' +
+            '<td><span style="font-size:10px; background:#f4f4f5; color:#27272a; padding:1px 6px; border-radius:4px; font-weight:600; border:1px solid #e4e4e7;">' + escapeHtml(mr.branchName) + '</span></td>' +
+            '<td style="text-align:right; font-weight:700; font-size:12px;" class="tabular">' + formatIndianCurrency(mr.proj) + '</td>' +
+            '<td style="text-align:right; font-weight:600; font-size:12px; color:#71717a;" class="tabular">' + formatIndianCurrency(mr.yesterday) + '</td>' +
+            '<td style="text-align:right;" class="tabular">' +
+              '<div style="font-weight:900; font-size:13px; color:#09090b;">' + formatIndianCurrency(mr.today) + '</div>' +
+              '<div style="font-size:10.5px; font-weight:600; color:#71717a; margin-top:1px;">(₹ ' + formatIndianCurrency(mr.yesterday) + ')</div>' +
+            '</td>' +
+            '<td style="text-align:center;" class="tabular">' +
+              '<div style="display:flex; align-items:center; justify-content:center; gap:5px;">' +
+                '<span style="font-size:10.5px; font-weight:700; min-width:32px; text-align:right; color:#09090b;">' + (share > 0 ? share.toFixed(1) + '%' : '0%') + '</span>' +
+                '<div style="width:34px; height:4px; background:#e4e4e7; border-radius:2px; overflow:hidden;">' +
+                  '<div style="width:' + Math.min(share, 100) + '%; height:100%; background:#09090b; border-radius:2px;"></div>' +
+                '</div>' +
+              '</div>' +
+            '</td>' +
+          '</tr>';
+        });
+        aodManagerTbody.innerHTML = aodMgrHtml;
+      }
+
+      // Render Top 5 Podium Deck
+      var top5Wrap = document.getElementById('aodTop5Container');
+      if (top5Wrap) {
+        var sourceCallers = (_aodTop5Scope === 'team') ? teamCallers : allFloorCallers;
+        var activeSource = sourceCallers.filter(function(c) {
+          return c.status !== 'Inactive' && c.status !== 'Hidden';
+        });
+
+        var sorted = activeSource.slice().sort(function(a, b) {
+          return (Number(b.today) || 0) - (Number(a.today) || 0);
+        });
+
+        var positiveCallers = sorted.filter(function(c) { return (Number(c.today) || 0) > 0; });
+        var top5 = positiveCallers.length > 0 ? positiveCallers.slice(0, 5) : sorted.slice(0, 5);
+
+        var html = '';
+        var hasPositive = top5.some(function(c) { return (Number(c.today) || 0) > 0; });
+
+        if (!hasPositive) {
+          html = '<div style="color:#71717a; padding:18px 0; text-align:center; font-weight:600; font-size:12px; width:100%;">No caller collections recorded yet today.</div>';
+        } else {
+          top5.forEach(function(c, i) {
+            var amt = Number(c.today) || 0;
+            var cYesterday = getCallerYesterdayCollection(c);
+            var cMk = (c.manager_key || '').toLowerCase();
+            var cMgrName = MANAGER_NAMES[cMk] || (cMk ? cMk.toUpperCase() : 'Floor');
+            var cBranchKey = getManagerAssignedBranch(cMk);
+            var bDefs = getAllBranchDefinitions();
+            var cBranch = bDefs.find(function(b) { return b.key === cBranchKey; });
+            var bName = cBranch ? cBranch.name : 'Branch';
+
+            var cardRankClass = (i === 0 ? ' rank-1' : '');
+            var badgeHtml = '';
+            if (i === 0) {
+              badgeHtml = '<span class="aod-top5-rank-badge rank-1-badge">★ #1</span> <span class="aod-top5-leader-pill">Leader</span>';
+            } else if (i === 1) {
+              badgeHtml = '<span class="aod-top5-rank-badge rank-2-badge">#2</span>';
+            } else if (i === 2) {
+              badgeHtml = '<span class="aod-top5-rank-badge rank-3-badge">#3</span>';
+            } else {
+              badgeHtml = '<span class="aod-top5-rank-badge rank-other-badge">#' + (i + 1) + '</span>';
+            }
+
+            html += '<div class="aod-top5-card' + cardRankClass + '">' +
+              '<div class="aod-top5-card-top">' +
+                badgeHtml +
+              '</div>' +
+              '<div class="aod-top5-card-name" title="' + escapeHtml(c.officer_name) + '">' + escapeHtml(c.officer_name) + '</div>' +
+              '<div class="aod-top5-card-sub" title="' + escapeHtml(cMgrName) + ' · ' + escapeHtml(bName) + '">' +
+                escapeHtml(cMgrName) + ' · ' + escapeHtml(bName) +
+              '</div>' +
+              '<div class="aod-top5-card-amt tabular">' + formatIndianCurrency(amt) + '</div>' +
+              '<div class="aod-top5-card-yday tabular">(₹ ' + formatIndianCurrency(cYesterday) + ' Yesterday)</div>' +
+            '</div>';
+          });
+        }
+        top5Wrap.innerHTML = html;
+      }
+    }
+
+    function switchAodTable(type) {
+      _currentAodTable = type;
+      var container = document.getElementById('aodTablesContainer');
+      var bWrap = document.getElementById('aodBranchTableWrap');
+      var mWrap = document.getElementById('aodManagerTableWrap');
+      var bGrid = document.getElementById('aodBranchAnalyticsGrid');
+      var btnS = document.getElementById('aodTabBtnSplit');
+      var btnB = document.getElementById('aodTabBtnBranch');
+      var btnM = document.getElementById('aodTabBtnMgr');
+
+      [btnS, btnB, btnM].forEach(function(b) { if (b) b.classList.remove('active'); });
+
+      if (type === 'manager') {
+        if (container) { container.className = 'aod-tables-container single-manager-mode'; }
+        if (bWrap) bWrap.style.display = 'none';
+        if (mWrap) { mWrap.style.display = 'flex'; mWrap.style.height = '100%'; }
+        if (bGrid) bGrid.style.display = 'none';
+        if (btnM) btnM.classList.add('active');
+      } else if (type === 'branch') {
+        if (container) { container.className = 'aod-tables-container single-branch-mode'; }
+        if (bWrap) { bWrap.style.display = 'flex'; bWrap.style.height = '100%'; }
+        if (mWrap) mWrap.style.display = 'none';
+        if (bGrid) bGrid.style.display = 'grid';
+        if (btnB) btnB.classList.add('active');
+      } else { // split
+        if (container) { container.className = 'aod-tables-container split-mode'; }
+        if (bWrap) { bWrap.style.display = 'flex'; bWrap.style.height = '100%'; }
+        if (mWrap) { mWrap.style.display = 'flex'; mWrap.style.height = '100%'; }
+        if (bGrid) bGrid.style.display = 'none';
+        if (btnS) btnS.classList.add('active');
+      }
+    }
+
+    function toggleAodTop5Scope(scope) {
+      _aodTop5Scope = scope || 'floor';
+      var fBtn = document.getElementById('btnAodScopeFloor');
+      var tBtn = document.getElementById('btnAodScopeTeam');
+      var bBadge = document.getElementById('aodTop5ScopeBadge');
+      if (fBtn && tBtn) {
+        if (_aodTop5Scope === 'floor') {
+          fBtn.classList.add('active');
+          tBtn.classList.remove('active');
+          if (bBadge) bBadge.textContent = 'Floor Leaders';
+        } else {
+          tBtn.classList.add('active');
+          fBtn.classList.remove('active');
+          var mgrName = MANAGER_NAMES[currentManagerKey] || (currentManagerKey ? currentManagerKey.toUpperCase() : 'Team');
+          if (bBadge) bBadge.textContent = mgrName + ' Team';
+        }
+      }
+      renderAodView();
+    }
+
+    function updateClock() {
+      var d = new Date();
+      var clockEl = document.getElementById('aodClockDisplay');
+      if (clockEl) {
+        clockEl.textContent = d.toLocaleTimeString('en-IN', { hour12: false });
+      }
+      var dateEl = document.getElementById('aodDateDisplay');
+      if (dateEl) {
+        dateEl.textContent = d.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(function() {});
+        var lbl = document.getElementById('btnFullscreenLabel');
+        if (lbl) lbl.textContent = 'Exit Fullscreen';
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(function() {});
+          var lbl2 = document.getElementById('btnFullscreenLabel');
+          if (lbl2) lbl2.textContent = 'Full Screen';
+        }
+      }
+    }
+
+    function closeEmbeddedAod() {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'CLOSE_AOD' }, '*');
+      } else {
+        window.location.href = 'manager.html';
+      }
+    }
+
+    window.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        if (isEmbedded) {
+          closeEmbeddedAod();
+        }
+      }
+    });
+
+    // Supabase Realtime Initialization
+    function initRealtime() {
+      try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+          _sbRealtimeClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          _sbRealtimeClient
+            .channel('aod-realtime-channel')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'callers' }, function() {
+              loadAodData();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'manager_projections' }, function() {
+              loadAodData();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, function() {
+              loadAodData();
+            })
+            .subscribe();
+        }
+      } catch(e) {
+        console.warn("Realtime init failed:", e);
+      }
+    }
+
+    // Startup Lifecycle
+    window.addEventListener('DOMContentLoaded', function() {
+      updateClock();
+      setInterval(updateClock, 1000);
+      switchAodTable(_currentAodTable);
+
+      loadAodData();
+      initRealtime();
+
+      // Background safety poll every 10 seconds for floor TVs
+      setInterval(loadAodData, 10000);
+    });
+  </script>
+</body>
+</html>

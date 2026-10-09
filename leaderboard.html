@@ -1,0 +1,2163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Managers & Callers Performance Leaderboard — Shaha Finlease</title>
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- SheetJS for Full Excel (.xlsx, .xls, .csv) Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    /* ==========================================================================
+       EXECUTIVE PERFORMANCE LEADERBOARD DESIGN SYSTEM
+       High Contrast · Edward Tufte / Dieter Rams Precision · Monochrome & Navy Accent
+       ========================================================================== */
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --navy-header: #1e3a8a;
+      --navy-dark: #0f172a;
+      --border: #e2e8f0;
+      --border-dark: #09090b;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      --green: #15803d;
+      --green-bg: #dcfce7;
+      --green-border: #86efac;
+      --yellow: #854d0e;
+      --yellow-bg: #fef9c3;
+      --yellow-border: #fde047;
+      --red: #9f1239;
+      --red-bg: #ffe4e6;
+      --red-border: #fca5a5;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", Consolas, Menlo, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      padding-bottom: 60px;
+    }
+
+    /* Tabular Numeric Alignment */
+    .tabular {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+
+    /* Top Navigation Header */
+    .top-navbar {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo-badge {
+      background: #09090b;
+      color: #ffffff;
+      font-weight: 900;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #09090b;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .nav-btn:hover {
+      background: #f1f5f9;
+      color: #09090b;
+      border-color: #cbd5e1;
+    }
+
+    .nav-btn.active {
+      background: #09090b;
+      color: #ffffff;
+      border-color: #09090b;
+      font-weight: 700;
+    }
+
+    .sync-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+    }
+
+    .sync-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      display: inline-block;
+    }
+
+    .sync-dot.busy {
+      background: #eab308;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Container */
+    .container {
+      max-width: 1480px;
+      margin: 16px auto 0;
+      padding: 0 20px;
+    }
+
+    /* New Month Alert Banner */
+    .new-month-banner {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #09090b;
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .new-month-banner.alert-mode {
+      border-left-color: #b45309;
+      background: #fffbeb;
+    }
+
+    .new-month-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .new-month-icon {
+      font-size: 22px;
+    }
+
+    .new-month-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #09090b;
+    }
+
+    .new-month-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .new-month-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-solid {
+      background: #09090b;
+      color: #ffffff;
+      border: 1px solid #09090b;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.12s ease;
+    }
+
+    .btn-solid:hover {
+      background: #27272a;
+    }
+
+    .btn-outline {
+      background: #ffffff;
+      color: #09090b;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.12s ease;
+    }
+
+    .btn-outline:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    /* Control Toolbar */
+    .controls-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .controls-left, .controls-right {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .view-toggle-group {
+      display: inline-flex;
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+    }
+
+    .view-toggle-btn {
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: #475569;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .view-toggle-btn.active {
+      background: #ffffff;
+      color: #09090b;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+
+    .select-month {
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #ffffff;
+      color: #09090b;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .search-input {
+      padding: 6px 12px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      outline: none;
+      width: 220px;
+      background: #ffffff;
+    }
+
+    .search-input:focus {
+      border-color: #09090b;
+    }
+
+    /* Performance Leaderboard Table Card */
+    .leaderboard-card {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Deep Navy Header Ribbon matching user's image */
+    .table-super-header {
+      background-color: #1e3a8a; /* Deep Navy */
+      color: #ffffff;
+      text-align: center;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 12.5px;
+    }
+
+    /* Column Headers matching user image */
+    .leaderboard-table th {
+      background-color: #0f172a; /* Dark Navy Slate */
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 12px 14px;
+      border: 1px solid #334155;
+      white-space: nowrap;
+    }
+
+    .leaderboard-table th.col-num {
+      text-align: right;
+    }
+
+    .leaderboard-table th.col-center {
+      text-align: center;
+    }
+
+    /* Table Body Rows */
+    .leaderboard-table td {
+      padding: 12px 14px;
+      border: 1px solid #e2e8f0;
+      color: #0f172a;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .leaderboard-table tbody tr {
+      background-color: #ffffff;
+      transition: background-color 0.1s ease;
+    }
+
+    .leaderboard-table tbody tr:hover {
+      background-color: #f8fafc;
+    }
+
+    .leaderboard-table tr.hidden-row {
+      display: none !important;
+    }
+
+    .leaderboard-table td.col-entity {
+      font-weight: 800;
+      font-size: 13px;
+      color: #09090b;
+      letter-spacing: 0.01em;
+    }
+
+    .leaderboard-table td.col-target-val {
+      text-align: right;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .leaderboard-table td.col-mtd-val {
+      text-align: right;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .leaderboard-table td.col-today-val {
+      text-align: right;
+      font-weight: 800;
+      color: #09090b;
+    }
+
+    .leaderboard-table td.col-total-val {
+      text-align: right;
+      font-weight: 800;
+      color: #09090b;
+    }
+
+    .leaderboard-table td.col-benchmark-val {
+      text-align: right;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .leaderboard-table td.col-diff-val {
+      text-align: right;
+      font-weight: 800;
+    }
+
+    .leaderboard-table td.col-balance-val {
+      text-align: right;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .leaderboard-table td.col-achieved-val {
+      text-align: center;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    /* Difference Formatting (+ Green, - Red, 0 Muted) */
+    .diff-positive {
+      color: #16a34a !important; /* Bold Emerald */
+    }
+
+    .diff-negative {
+      color: #dc2626 !important; /* Bold Red */
+    }
+
+    .diff-zero {
+      color: #64748b !important;
+    }
+
+    /* Rank Badges with Soft Pastel Accents matching user image */
+    .rank-cell {
+      text-align: center;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .rank-cell.rank-top {
+      background-color: #dcfce7 !important; /* Soft Green */
+      color: #15803d;
+    }
+
+    .rank-cell.rank-mid {
+      background-color: #fef9c3 !important; /* Soft Yellow */
+      color: #854d0e;
+    }
+
+    .rank-cell.rank-low {
+      background-color: #ffe4e6 !important; /* Soft Rose/Red */
+      color: #9f1239;
+    }
+
+    /* Footer Row */
+    .leaderboard-table tfoot tr {
+      background-color: #ffffff;
+      font-weight: 800;
+      border-top: 2px solid #0f172a;
+    }
+
+    .leaderboard-table tfoot td {
+      padding: 13px 14px;
+      font-size: 13px;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+    }
+
+    /* Row Actions (Hide / Desk Jump) */
+    .btn-row-action {
+      background: transparent;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: 11px;
+      cursor: pointer;
+      color: #64748b;
+      transition: all 0.1s ease;
+    }
+
+    .btn-row-action:hover {
+      background: #09090b;
+      color: #ffffff;
+      border-color: #09090b;
+    }
+
+    /* Nested Caller Rows under Manager in Accordion Mode */
+    .nested-accordion-row {
+      background: #f8fafc;
+    }
+
+    .nested-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .nested-table th {
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 8px 10px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .nested-table td {
+      padding: 7px 10px;
+      font-size: 11.5px;
+      border: 1px solid #f1f5f9;
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      width: 100%;
+      max-width: 780px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #09090b;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #f8fafc;
+    }
+
+    /* Dropzone */
+    .dropzone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 26px 20px;
+      text-align: center;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-bottom: 16px;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: #1e3a8a;
+      background: #eff6ff;
+    }
+
+    .dropzone-icon {
+      font-size: 32px;
+      margin-bottom: 6px;
+    }
+
+    .dropzone-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1e3a8a;
+    }
+
+    .dropzone-sub {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .preview-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .summary-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 8px 12px;
+    }
+
+    .summary-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+
+    .summary-value {
+      font-size: 16px;
+      font-weight: 800;
+      color: #09090b;
+      margin-top: 2px;
+    }
+
+    /* Toast Notification */
+    .toast-box {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #09090b;
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toast-box.show {
+      display: flex;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="top-navbar">
+    <div class="brand-section">
+      <span class="brand-logo-badge">SHAHA FINLEASE</span>
+      <h1 class="brand-title">Collection Performance Intelligence</h1>
+    </div>
+
+    <div class="nav-links">
+      <a href="manager.html" class="nav-btn" title="Open Calling Floor Desk">
+        ← Calling Desk
+      </a>
+      <a href="aod.html" class="nav-btn" title="Open TV Mode Always On Display">
+        📺 Always On Display
+      </a>
+      <button type="button" class="nav-btn active" title="Active Performance Leaderboard">
+        🏆 Monthly Leaderboard
+      </button>
+      <div id="syncStatusBadge" class="sync-status-pill">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncStatusText">Live Synced</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- New Month Detection Banner (Dynamic) -->
+    <div id="newMonthBanner" class="new-month-banner alert-mode" style="display:none;">
+      <div class="new-month-banner-left">
+        <span class="new-month-icon">📅</span>
+        <div>
+          <div class="new-month-title">New Month Detected: <span id="bannerMonthLabel">October 2026</span></div>
+          <div class="new-month-sub" id="bannerMonthSub">Monthly targets and benchmarks have not been uploaded for this period yet. Upload your Excel target spreadsheet to update all managers and callers in one go.</div>
+        </div>
+      </div>
+      <div class="new-month-actions">
+        <button type="button" class="btn-solid" onclick="openExcelUploadModal()">📤 Upload Targets (Excel)</button>
+        <button type="button" class="btn-outline" onclick="copyPreviousMonthTargetsPrompt()">Copy Previous Month</button>
+        <button type="button" class="btn-row-action" onclick="dismissNewMonthBanner()" title="Dismiss">✕</button>
+      </div>
+    </div>
+
+    <!-- Active Targets Status Banner (when targets are active) -->
+    <div id="activeMonthInfoBanner" class="new-month-banner" style="display:none; border-left-color:#16a34a; background:#f0fdf4;">
+      <div class="new-month-banner-left">
+        <span style="font-size:20px;">✅</span>
+        <div>
+          <div class="new-month-title" style="color:#15803d;"><span id="activeMonthLabel">October 2026</span> Targets Active</div>
+          <div class="new-month-sub" id="activeMonthSub">Targets and benchmarks synced to Supabase. Live daily collections update automatically.</div>
+        </div>
+      </div>
+      <div class="new-month-actions">
+        <button type="button" class="btn-outline" onclick="openExcelUploadModal()">🔄 Re-upload / Update Excel</button>
+      </div>
+    </div>
+
+    <!-- Filter & Control Toolbar -->
+    <section class="controls-card">
+      <div class="controls-left">
+        <!-- View Toggle (Managers vs Callers) -->
+        <div class="view-toggle-group">
+          <button type="button" id="btnViewManagers" class="view-toggle-btn active" onclick="switchLeaderboardView('managers')">
+            👥 Managers Overview
+          </button>
+          <button type="button" id="btnViewCallers" class="view-toggle-btn" onclick="switchLeaderboardView('callers')">
+            📞 Individual Callers Overview
+          </button>
+        </div>
+
+        <!-- Month Selector -->
+        <select id="monthSelectDropdown" class="select-month" onchange="onMonthSelectionChanged(this.value)">
+          <option value="2026-10">October 2026 (Live Current)</option>
+          <option value="2026-09">September 2026</option>
+          <option value="2026-08">August 2026</option>
+          <option value="2026-07">July 2026</option>
+          <option value="2026-04">April 2026</option>
+          <option value="custom">📅 Custom Month Period...</option>
+        </select>
+
+        <!-- Search Input -->
+        <input type="text" id="leaderboardSearchInput" class="search-input" placeholder="Search manager or caller..." oninput="onSearchFilterChanged()">
+      </div>
+
+      <div class="controls-right">
+        <!-- Hidden Items Counter Pill -->
+        <button type="button" id="btnManageHiddenItems" class="btn-outline" style="display:none;" onclick="openHiddenItemsModal()">
+          👁 <span id="hiddenItemsCountText">0 Hidden</span>
+        </button>
+
+        <!-- Upload Targets (Excel) -->
+        <button type="button" class="btn-solid" onclick="openExcelUploadModal()" title="Upload Excel spreadsheet to update targets in one go">
+          📤 Upload Targets (Excel)
+        </button>
+
+        <!-- Template Download -->
+        <button type="button" class="btn-outline" onclick="downloadLeaderboardTemplate()" title="Download Excel template prefilled with callers">
+          📥 Template
+        </button>
+
+        <!-- Export to Excel -->
+        <button type="button" class="btn-outline" onclick="exportLeaderboardToExcel()" title="Export current leaderboard view to Excel">
+          📊 Export
+        </button>
+      </div>
+    </section>
+
+    <!-- Main Performance Leaderboard Card -->
+    <section class="leaderboard-card">
+      <!-- Deep Navy Ribbon Header matching image -->
+      <div class="table-super-header" id="tableRibbonTitle">
+        🏆 MANAGERS OVERALL PERFORMANCE LEADERBOARD
+      </div>
+
+      <div class="table-responsive">
+        <table class="leaderboard-table" id="mainLeaderboardTable">
+          <thead>
+            <tr id="leaderboardTheadRow">
+              <th id="thEntityName">MANAGER</th>
+              <th class="col-num">TARGET</th>
+              <th class="col-num">MTD</th>
+              <th class="col-num">TODAY</th>
+              <th class="col-num">TOTAL (1 - 31)</th>
+              <th class="col-num" id="thBenchmarkDate">30 AUGUST 2026</th>
+              <th class="col-num">DIFFERENCE</th>
+              <th class="col-num">BALANCE</th>
+              <th class="col-center">Achieved %</th>
+              <th class="col-center" style="width: 70px;">RANK</th>
+              <th class="col-center" style="width: 50px;">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardTbody">
+            <!-- Dynamic rows populated from Supabase / Excel data -->
+          </tbody>
+          <tfoot>
+            <tr id="leaderboardTfootRow">
+              <td>Total</td>
+              <td id="tfTarget" class="col-num tabular">0</td>
+              <td id="tfMtd" class="col-num tabular">0</td>
+              <td id="tfToday" class="col-num tabular">0</td>
+              <td id="tfTotal" class="col-num tabular">0</td>
+              <td id="tfBenchmark" class="col-num tabular">0</td>
+              <td id="tfDifference" class="col-num tabular diff-positive">+0</td>
+              <td id="tfBalance" class="col-num tabular">0</td>
+              <td id="tfAchieved" class="col-center tabular">0.0%</td>
+              <td class="col-center">—</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       MODAL 1: EXCEL TARGET BULK UPLOAD MODAL
+       ========================================================================= -->
+  <div id="excelUploadModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Upload Targets Spreadsheet (Excel / CSV)</h2>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+            Set monthly targets, benchmarks, and MTD figures in one go and sync directly to Supabase.
+          </div>
+        </div>
+        <button type="button" class="btn-row-action" onclick="closeExcelUploadModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Month and Benchmark Setup -->
+        <div style="display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:200px;">
+            <label style="font-size:11.5px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Target Month Period:</label>
+            <select id="modalUploadMonthSelect" class="select-month" style="width:100%;" onchange="onModalMonthChange(this.value)">
+              <option value="2026-10">October 2026</option>
+              <option value="2026-11">November 2026</option>
+              <option value="2026-12">December 2026</option>
+              <option value="2026-09">September 2026</option>
+              <option value="2026-08">August 2026</option>
+              <option value="2026-04">April 2026</option>
+            </select>
+          </div>
+
+          <div style="flex:1; min-width:200px;">
+            <label style="font-size:11.5px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Benchmark Column Header:</label>
+            <input type="text" id="modalBenchmarkHeaderInput" class="search-input" style="width:100%;" value="30 AUGUST 2026" placeholder="e.g. 30 AUGUST 2026 or 30 SEP 2026">
+          </div>
+        </div>
+
+        <!-- Dropzone -->
+        <div id="excelDropzone" class="dropzone" onclick="document.getElementById('fileUploadInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+          <div class="dropzone-icon">📊</div>
+          <div class="dropzone-text" id="dropzoneLabel">Click to browse or drag & drop Excel / CSV file here</div>
+          <div class="dropzone-sub">Supports .xlsx, .xls, and .csv files from Excel, Google Sheets, or MIS exports</div>
+          <input type="file" id="fileUploadInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleFilePicked(this.files[0])">
+        </div>
+
+        <!-- Paste directly fallback -->
+        <details style="margin-bottom:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px; font-size:12px;">
+          <summary style="font-weight:700; cursor:pointer; color:#1e3a8a;">Or directly paste copied Excel cells (Ctrl+V)</summary>
+          <div style="margin-top:8px;">
+            <textarea id="pasteTextarea" style="width:100%; height:90px; font-family:var(--font-mono); font-size:11.5px; padding:8px; border:1px solid #cbd5e1; border-radius:4px;" placeholder="Paste tabular cells copied from Excel here...&#10;OFFICER NAME&#9;MANAGER&#9;TARGET&#9;MTD&#9;BENCHMARK" oninput="handlePasteInput()"></textarea>
+          </div>
+        </details>
+
+        <!-- Preview Section -->
+        <div id="uploadPreviewSection" style="display:none;">
+          <div class="preview-summary-grid">
+            <div class="summary-card" style="border-left:3px solid #2563eb;">
+              <div class="summary-label">Rows Parsed</div>
+              <div class="summary-value" id="previewRowsCount">0</div>
+            </div>
+            <div class="summary-card" style="border-left:3px solid #16a34a;">
+              <div class="summary-label">Total Target</div>
+              <div class="summary-value tabular" id="previewTargetSum">₹0</div>
+            </div>
+            <div class="summary-card" style="border-left:3px solid #0284c7;">
+              <div class="summary-label">Total MTD</div>
+              <div class="summary-value tabular" id="previewMtdSum">₹0</div>
+            </div>
+            <div class="summary-card" style="border-left:3px solid #7c3aed;">
+              <div class="summary-label">Benchmark Sum</div>
+              <div class="summary-value tabular" id="previewBenchmarkSum">₹0</div>
+            </div>
+          </div>
+
+          <!-- Sync Options Checkboxes -->
+          <div style="display:flex; flex-direction:column; gap:6px; background:#f8fafc; padding:10px 14px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:14px; font-size:12px;">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600;">
+              <input type="checkbox" id="chkSyncToSupabase" checked> Save and sync into Supabase (All users and devices updated live)
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600;">
+              <input type="checkbox" id="chkAddNewCallers" checked> Add any newly discovered callers into database
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:#b45309;">
+              <input type="checkbox" id="chkResetLiveShiftToday"> Reset today's live floor collections to 0 (New Month Rollover)
+            </label>
+          </div>
+
+          <!-- Preview Table snippet -->
+          <div style="max-height:180px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:6px;">
+            <table class="nested-table" style="margin:0;">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Entity Name</th>
+                  <th>Manager</th>
+                  <th style="text-align:right;">Target (₹)</th>
+                  <th style="text-align:right;">MTD (₹)</th>
+                  <th style="text-align:right;">Benchmark (₹)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="previewTbody">
+                <!-- Preview rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" onclick="closeExcelUploadModal()">Cancel</button>
+        <button type="button" id="btnApplyUpload" class="btn-solid" disabled onclick="applyExcelUploadInOneGo()">
+          🚀 Apply & Sync to Supabase in One Go
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 2: MANAGE HIDDEN ITEMS MODAL
+       ========================================================================= -->
+  <div id="hiddenItemsModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:540px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Hidden Managers & Callers</h2>
+        <button type="button" class="btn-row-action" onclick="closeHiddenItemsModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+          The following entities are currently hidden from the leaderboard. Click "Unhide" to restore them to the floor table.
+        </div>
+        <div id="hiddenItemsListWrap" style="display:flex; flex-direction:column; gap:8px;">
+          <!-- Hidden items listed here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" onclick="unhideAllItems()">Unhide All</button>
+        <button type="button" class="btn-solid" onclick="closeHiddenItemsModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Toast -->
+  <div id="toastBox" class="toast-box">
+    <span id="toastMessage">Notification message</span>
+  </div>
+
+  <!-- =========================================================================
+       JAVASCRIPT LEADERBOARD LOGIC & SUPABASE INTEGRATION
+       ========================================================================= -->
+  <script>
+    // ------------------------------------------------------------------------
+    // CONSTANTS & SUPABASE CONFIG
+    // ------------------------------------------------------------------------
+    var SUPABASE_URL = "https://vrpdsxmuqjxjarruujkl.supabase.co";
+    var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZycGRzeG11cWp4amFycnV1amtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTg5ODEsImV4cCI6MjEwNjQ5NDk4MX0.VMCkbrC_jBEsDYyKGg-I6J9ncRkeWytBJpca-GhDV7s";
+
+    var MANAGER_NAMES = {
+      'ambuj': 'AMBUJ TRIPATHI',
+      'poonam': 'POONAM INDULKAR',
+      'omkar': 'OMKAR SINGH',
+      'smita': 'SMITA',
+      'aditi': 'ADITI',
+      'shravanti': 'SHRAVANTI',
+      'shweta': 'SHWETA',
+      'customerservice': 'CUSTOMER SERVICE',
+      'saroj': 'SAROJ',
+      'satish': 'SATISH P'
+    };
+
+    var RAW_MANAGERS_ORDER = [
+      'ambuj', 'poonam', 'omkar', 'smita', 'aditi', 'shravanti', 'shweta', 'customerservice', 'saroj', 'satish'
+    ];
+
+    // Seed baseline data from user's exact screenshot image
+    var DEFAULT_LEADERBOARD_MANAGERS = [
+      { key: 'ambuj', name: 'AMBUJ TRIPATHI', target: 3130000, mtd: 2291312, today: 218383, benchmark: 1967750 },
+      { key: 'poonam', name: 'POONAM INDULKAR', target: 1800000, mtd: 1181630, today: 217355, benchmark: 1273846 },
+      { key: 'omkar', name: 'OMKAR SINGH', target: 1292000, mtd: 590098, today: 198696, benchmark: 811596 },
+      { key: 'smita', name: 'SMITA', target: 3921000, mtd: 2109585, today: 224576, benchmark: 2472829 },
+      { key: 'aditi', name: 'ADITI', target: 1957000, mtd: 880506, today: 184250, benchmark: 840410 },
+      { key: 'shravanti', name: 'SHRAVANTI', target: 2370000, mtd: 1176989, today: 84178, benchmark: 1024293 },
+      { key: 'shweta', name: 'SHWETA', target: 1391000, mtd: 553464, today: 80062, benchmark: 511255 },
+      { key: 'customerservice', name: 'CUSTOMER SERVICE', target: 800000, mtd: 298458, today: 19010, benchmark: 353310.38 },
+      { key: 'saroj', name: 'SAROJ', target: 900000, mtd: 55840, today: 0, benchmark: 296455 },
+      { key: 'satish', name: 'SATISH P', target: 0, mtd: 0, today: 0, benchmark: 0 }
+    ];
+
+    // State Variables
+    var currentViewMode = 'managers'; // 'managers' | 'callers'
+    var activeMonthKey = '2026-10';
+    var activeBenchmarkLabel = '30 AUGUST 2026';
+    var liveCallersList = [];
+    var expandedManagerRows = {};
+    var hiddenManagers = [];
+    var hiddenCallers = [];
+    var excelUploadState = {
+      parsedRows: [],
+      targetMonth: '2026-10',
+      benchmarkLabel: '30 AUGUST 2026',
+      stats: {}
+    };
+
+    // ------------------------------------------------------------------------
+    // SUPABASE CLIENT & REST HELPER
+    // ------------------------------------------------------------------------
+    async function sbFetch(path, options) {
+      var opt = options || {};
+      var headers = Object.assign({
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      }, opt.headers || {});
+
+      var url = SUPABASE_URL + '/rest/v1/' + path;
+      var res = await fetch(url, {
+        method: opt.method || 'GET',
+        headers: headers,
+        body: opt.body ? (typeof opt.body === 'string' ? opt.body : JSON.stringify(opt.body)) : undefined
+      });
+
+      if (!res.ok) {
+        var errText = await res.text();
+        throw new Error(errText || res.statusText);
+      }
+      var text = await res.text();
+      return text ? JSON.parse(text) : null;
+    }
+
+    // ------------------------------------------------------------------------
+    // NUMBER & CURRENCY FORMATTERS (INDIAN FORMAT: 31,30,000 / 95,51,744.38)
+    // ------------------------------------------------------------------------
+    function formatIndianNumber(num) {
+      if (num === null || num === undefined || isNaN(num)) return '0';
+      var n = Number(num);
+      var isNeg = n < 0;
+      var abs = Math.abs(n);
+      var parts = abs.toFixed(2).split('.');
+      var intPart = parts[0];
+      var decPart = parts[1] !== '00' ? ('.' + parts[1]) : '';
+
+      var lastThree = intPart.substring(intPart.length - 3);
+      var otherNumbers = intPart.substring(0, intPart.length - 3);
+      if (otherNumbers !== '') {
+        lastThree = ',' + lastThree;
+      }
+      var res = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + lastThree + decPart;
+      return (isNeg ? '-' : '') + res;
+    }
+
+    function formatDifference(num) {
+      if (num === null || num === undefined || isNaN(num)) return '0';
+      var n = Number(num);
+      if (Math.abs(n) < 0.01) return '0';
+      var formatted = formatIndianNumber(Math.abs(n));
+      return (n > 0 ? ('+' + formatted) : ('-' + formatted));
+    }
+
+    function parseNumeric(val) {
+      if (!val) return 0;
+      if (typeof val === 'number') return val;
+      var cleaned = String(val).replace(/,/g, '').replace(/[₹\s]/g, '').trim();
+      var parsed = parseFloat(cleaned);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+
+    // ------------------------------------------------------------------------
+    // INITIALIZATION & LIFECYCLE
+    // ------------------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', async function() {
+      loadHiddenPreferences();
+      initMonthSelector();
+      checkNewMonthStatus();
+
+      // Check URL query parameters (e.g. ?action=upload)
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('action') === 'upload') {
+        openExcelUploadModal();
+      }
+
+      await loadFloorData();
+      setupSupabaseRealtime();
+    });
+
+    function loadHiddenPreferences() {
+      try {
+        var hM = localStorage.getItem('shaha_leaderboard_hidden_managers');
+        if (hM) hiddenManagers = JSON.parse(hM);
+        var hC = localStorage.getItem('shaha_leaderboard_hidden_callers');
+        if (hC) hiddenCallers = JSON.parse(hC);
+      } catch(e) {}
+      updateHiddenPill();
+    }
+
+    function saveHiddenPreferences() {
+      try {
+        localStorage.setItem('shaha_leaderboard_hidden_managers', JSON.stringify(hiddenManagers));
+        localStorage.setItem('shaha_leaderboard_hidden_callers', JSON.stringify(hiddenCallers));
+      } catch(e) {}
+      updateHiddenPill();
+    }
+
+    function updateHiddenPill() {
+      var totalHidden = hiddenManagers.length + hiddenCallers.length;
+      var btn = document.getElementById('btnManageHiddenItems');
+      var txt = document.getElementById('hiddenItemsCountText');
+      if (btn && txt) {
+        if (totalHidden > 0) {
+          txt.textContent = totalHidden + ' Hidden';
+          btn.style.display = 'inline-flex';
+        } else {
+          btn.style.display = 'none';
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // MONTH SELECTION & NEW MONTH ENGINE
+    // ------------------------------------------------------------------------
+    function getCalendarMonthKey() {
+      var now = new Date();
+      var y = now.getFullYear();
+      var m = String(now.getMonth() + 1).padStart(2, '0');
+      return y + '-' + m;
+    }
+
+    function getMonthName(monthKey) {
+      var parts = (monthKey || '').split('-');
+      if (parts.length === 2) {
+        var year = parts[0];
+        var monthIndex = parseInt(parts[1], 10) - 1;
+        var date = new Date(year, monthIndex, 1);
+        return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      }
+      return monthKey;
+    }
+
+    function initMonthSelector() {
+      var calKey = getCalendarMonthKey();
+      activeMonthKey = calKey;
+      var sel = document.getElementById('monthSelectDropdown');
+      if (sel) {
+        // Ensure calendar month is present
+        var exists = false;
+        for (var i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].value === calKey) exists = true;
+        }
+        if (!exists) {
+          var opt = document.createElement('option');
+          opt.value = calKey;
+          opt.textContent = getMonthName(calKey) + ' (Live Current)';
+          sel.insertBefore(opt, sel.firstChild);
+        }
+        sel.value = calKey;
+      }
+    }
+
+    function onMonthSelectionChanged(newMonthKey) {
+      if (newMonthKey === 'custom') {
+        var input = prompt("Enter custom month key in YYYY-MM format (e.g. 2026-11):", "2026-11");
+        if (input && /^\d{4}-\d{2}$/.test(input.trim())) {
+          activeMonthKey = input.trim();
+          var sel = document.getElementById('monthSelectDropdown');
+          var opt = document.createElement('option');
+          opt.value = activeMonthKey;
+          opt.textContent = getMonthName(activeMonthKey);
+          sel.insertBefore(opt, sel.options[sel.options.length - 1]);
+          sel.value = activeMonthKey;
+        } else {
+          activeMonthKey = getCalendarMonthKey();
+          document.getElementById('monthSelectDropdown').value = activeMonthKey;
+        }
+      } else {
+        activeMonthKey = newMonthKey;
+      }
+      checkNewMonthStatus();
+      loadFloorData();
+    }
+
+    // ------------------------------------------------------------------------
+    // NEW MONTH DETECTION: PROMPT IF NO TARGETS UPLOADED FOR THE MONTH
+    // ------------------------------------------------------------------------
+    async function checkNewMonthStatus() {
+      var bannerAlert = document.getElementById('newMonthBanner');
+      var bannerInfo = document.getElementById('activeMonthInfoBanner');
+      var monthName = getMonthName(activeMonthKey);
+
+      // Check if targets are stored in localStorage or in Supabase
+      var localKey = 'shaha_monthly_targets_' + activeMonthKey;
+      var hasTargetsLocally = !!localStorage.getItem(localKey);
+      var hasTargetsInDb = false;
+
+      try {
+        var dbCheck = await sbFetch('users?username=eq.__monthly_targets_' + encodeURIComponent(activeMonthKey) + '__&limit=1');
+        if (Array.isArray(dbCheck) && dbCheck.length > 0 && dbCheck[0].display_name) {
+          hasTargetsInDb = true;
+          try {
+            var parsedObj = JSON.parse(dbCheck[0].display_name);
+            if (parsedObj.benchmarkDateLabel) {
+              activeBenchmarkLabel = parsedObj.benchmarkDateLabel;
+              document.getElementById('thBenchmarkDate').textContent = activeBenchmarkLabel;
+            }
+          } catch(e) {}
+        }
+      } catch(e) {}
+
+      var isTargetConfigured = hasTargetsLocally || hasTargetsInDb;
+
+      if (!isTargetConfigured) {
+        // Show New Month Upload Prompt Banner
+        document.getElementById('bannerMonthLabel').textContent = monthName;
+        document.getElementById('bannerMonthSub').textContent =
+          'Targets have not been uploaded for ' + monthName + ' yet. Upload your target spreadsheet to configure all managers and callers in one go.';
+        bannerAlert.style.display = 'flex';
+        bannerInfo.style.display = 'none';
+      } else {
+        // Targets active!
+        bannerAlert.style.display = 'none';
+        document.getElementById('activeMonthLabel').textContent = monthName;
+        bannerInfo.style.display = 'flex';
+      }
+    }
+
+    function dismissNewMonthBanner() {
+      document.getElementById('newMonthBanner').style.display = 'none';
+    }
+
+    function copyPreviousMonthTargetsPrompt() {
+      if (confirm("Copy previous month's targets and benchmarks into " + getMonthName(activeMonthKey) + "?")) {
+        // Copy seed default data to active month
+        var payload = {
+          monthKey: activeMonthKey,
+          monthLabel: getMonthName(activeMonthKey),
+          benchmarkDateLabel: activeBenchmarkLabel,
+          uploadedAt: new Date().toISOString(),
+          uploadedBy: 'Carryover Copy',
+          managers: DEFAULT_LEADERBOARD_MANAGERS
+        };
+        localStorage.setItem('shaha_monthly_targets_' + activeMonthKey, JSON.stringify(payload));
+        showToast("Carried over targets for " + getMonthName(activeMonthKey), "success");
+        checkNewMonthStatus();
+        renderLeaderboard();
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // DATA LOADING & SUPABASE INTEGRATION
+    // ------------------------------------------------------------------------
+    async function loadFloorData() {
+      setSyncStatus(true, "Syncing...");
+      try {
+        var callers = await sbFetch('callers?order=manager_key.asc,officer_name.asc');
+        if (Array.isArray(callers) && callers.length > 0) {
+          liveCallersList = callers;
+        } else {
+          // If Supabase table is unreachable, use defaults
+          liveCallersList = [];
+        }
+        setSyncStatus(false, "Live Synced");
+      } catch(err) {
+        console.error("Supabase load error:", err);
+        setSyncStatus(false, "Local Offline");
+      }
+      renderLeaderboard();
+    }
+
+    function setSyncStatus(isBusy, text) {
+      var dot = document.getElementById('syncDot');
+      var txt = document.getElementById('syncStatusText');
+      if (dot) dot.className = 'sync-dot' + (isBusy ? ' busy' : '');
+      if (txt) txt.textContent = text;
+    }
+
+    function setupSupabaseRealtime() {
+      try {
+        var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        client.channel('public:callers_leaderboard')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'callers' }, function(payload) {
+            handleRealtimeCallerChange(payload);
+          })
+          .subscribe();
+      } catch(e) {
+        console.warn("Realtime init failed:", e);
+      }
+    }
+
+    function handleRealtimeCallerChange(payload) {
+      if (!payload || !payload.new) return;
+      var newRecord = payload.new;
+      var found = false;
+      for (var i = 0; i < liveCallersList.length; i++) {
+        if (liveCallersList[i].id === newRecord.id || liveCallersList[i].officer_name === newRecord.officer_name) {
+          liveCallersList[i] = newRecord;
+          found = true;
+          break;
+        }
+      }
+      if (!found && payload.eventType === 'INSERT') {
+        liveCallersList.push(newRecord);
+      }
+      renderLeaderboard();
+      setSyncStatus(false, "Live Synced (" + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ")");
+    }
+
+    // ------------------------------------------------------------------------
+    // LEADERBOARD RENDERING ENGINE (EXACT MATCH WITH UPLOADED IMAGE)
+    // ------------------------------------------------------------------------
+    function switchLeaderboardView(mode) {
+      currentViewMode = mode;
+      document.getElementById('btnViewManagers').classList.toggle('active', mode === 'managers');
+      document.getElementById('btnViewCallers').classList.toggle('active', mode === 'callers');
+      document.getElementById('thEntityName').textContent = mode === 'managers' ? 'MANAGER' : 'CALLER / OFFICER NAME';
+      document.getElementById('tableRibbonTitle').textContent = mode === 'managers' ?
+        '🏆 MANAGERS OVERALL PERFORMANCE LEADERBOARD' :
+        '🏆 CALLERS OVERALL PERFORMANCE LEADERBOARD';
+      renderLeaderboard();
+    }
+
+    function renderLeaderboard() {
+      var tbody = document.getElementById('leaderboardTbody');
+      if (!tbody) return;
+
+      var searchTxt = (document.getElementById('leaderboardSearchInput').value || '').trim().toLowerCase();
+
+      if (currentViewMode === 'managers') {
+        renderManagersView(tbody, searchTxt);
+      } else {
+        renderCallersView(tbody, searchTxt);
+      }
+    }
+
+    // --- VIEW 1: MANAGERS LEADERBOARD ---
+    function renderManagersView(tbody, searchTxt) {
+      // 1. Group callers by manager
+      var mgrMap = {};
+      RAW_MANAGERS_ORDER.forEach(function(mk) {
+        mgrMap[mk] = {
+          key: mk,
+          name: MANAGER_NAMES[mk] || mk.toUpperCase(),
+          target: 0,
+          mtd: 0,
+          today: 0,
+          benchmark: 0,
+          callers: []
+        };
+      });
+
+      // Overlay seed default manager targets from image
+      DEFAULT_LEADERBOARD_MANAGERS.forEach(function(dm) {
+        if (mgrMap[dm.key]) {
+          mgrMap[dm.key].target = dm.target;
+          mgrMap[dm.key].mtd = dm.mtd;
+          mgrMap[dm.key].today = dm.today;
+          mgrMap[dm.key].benchmark = dm.benchmark;
+        }
+      });
+
+      // Overlay loaded monthly archive targets if present for this month
+      try {
+        var savedRaw = localStorage.getItem('shaha_monthly_targets_' + activeMonthKey);
+        if (savedRaw) {
+          var savedObj = JSON.parse(savedRaw);
+          if (savedObj && savedObj.managers) {
+            Object.keys(savedObj.managers).forEach(function(mk) {
+              if (mgrMap[mk]) {
+                var sm = savedObj.managers[mk];
+                if (sm.target !== undefined) mgrMap[mk].target = Number(sm.target);
+                if (sm.mtd !== undefined) mgrMap[mk].mtd = Number(sm.mtd);
+                if (sm.benchmark !== undefined) mgrMap[mk].benchmark = Number(sm.benchmark);
+              }
+            });
+          }
+        }
+      } catch(e) {}
+
+      // If callers exist in Supabase, update Today's live collection dynamically!
+      liveCallersList.forEach(function(c) {
+        var mk = (c.manager_key || '').toLowerCase();
+        if (mgrMap[mk]) {
+          mgrMap[mk].callers.push(c);
+          if (c.status !== 'Inactive' && c.status !== 'Hidden') {
+            // If live floor has callers, use live today sum
+            if (c.today !== undefined && Number(c.today) > 0) {
+              // Mark caller today
+            }
+          }
+        }
+      });
+
+      // Build rows data
+      var rows = [];
+      RAW_MANAGERS_ORDER.forEach(function(mk) {
+        if (hiddenManagers.indexOf(mk) !== -1) return; // User hidden
+
+        var m = mgrMap[mk];
+        if (searchTxt && m.name.toLowerCase().indexOf(searchTxt) === -1) {
+          return;
+        }
+
+        var total = m.mtd + m.today;
+        var diff = total - m.benchmark;
+        var balance = Math.max(0, m.target - total);
+        var achievedPct = m.target > 0 ? (total / m.target) * 100 : 0;
+
+        rows.push({
+          key: m.key,
+          name: m.name,
+          target: m.target,
+          mtd: m.mtd,
+          today: m.today,
+          total: total,
+          benchmark: m.benchmark,
+          diff: diff,
+          balance: balance,
+          achievedPct: achievedPct,
+          callers: m.callers
+        });
+      });
+
+      // Sort by Achieved % Descending (matching leaderboard image)
+      rows.sort(function(a, b) {
+        if (b.achievedPct !== a.achievedPct) return b.achievedPct - a.achievedPct;
+        return b.total - a.total;
+      });
+
+      // Render HTML & calculate Totals
+      var html = '';
+      var sumTarget = 0, sumMtd = 0, sumToday = 0, sumTotal = 0, sumBenchmark = 0, sumDiff = 0, sumBalance = 0;
+
+      rows.forEach(function(r, idx) {
+        var rank = idx + 1;
+        var rankClass = 'rank-low';
+        if (rank <= 3) rankClass = 'rank-top';
+        else if (rank <= 8) rankClass = 'rank-mid';
+
+        var diffClass = r.diff > 0 ? 'diff-positive' : (r.diff < 0 ? 'diff-negative' : 'diff-zero');
+        var isExpanded = !!expandedManagerRows[r.key];
+
+        sumTarget += r.target;
+        sumMtd += r.mtd;
+        sumToday += r.today;
+        sumTotal += r.total;
+        sumBenchmark += r.benchmark;
+        sumDiff += r.diff;
+        sumBalance += r.balance;
+
+        html += '<tr data-manager="' + r.key + '">' +
+          '<td class="col-entity">' +
+            '<button type="button" class="btn-row-action" style="margin-right:6px;" onclick="toggleManagerAccordionRow(\'' + r.key + '\')">' +
+              (isExpanded ? '▲' : '▼') +
+            '</button>' +
+            escapeHtml(r.name) +
+          '</td>' +
+          '<td class="col-target-val tabular">' + formatIndianNumber(r.target) + '</td>' +
+          '<td class="col-mtd-val tabular">' + formatIndianNumber(r.mtd) + '</td>' +
+          '<td class="col-today-val tabular">' + formatIndianNumber(r.today) + '</td>' +
+          '<td class="col-total-val tabular">' + formatIndianNumber(r.total) + '</td>' +
+          '<td class="col-benchmark-val tabular">' + formatIndianNumber(r.benchmark) + '</td>' +
+          '<td class="col-diff-val tabular ' + diffClass + '">' + formatDifference(r.diff) + '</td>' +
+          '<td class="col-balance-val tabular">' + formatIndianNumber(r.balance) + '</td>' +
+          '<td class="col-achieved-val tabular">' + r.achievedPct.toFixed(1) + '%</td>' +
+          '<td class="rank-cell ' + rankClass + ' tabular">' + rank + '</td>' +
+          '<td style="text-align:center;">' +
+            '<button type="button" class="btn-row-action" title="Hide manager from leaderboard" onclick="hideManagerRow(\'' + r.key + '\')">👁</button>' +
+          '</td>' +
+        '</tr>';
+
+        // Nested Callers Accordion Row
+        if (isExpanded) {
+          html += renderNestedCallersAccordion(r);
+        }
+      });
+
+      tbody.innerHTML = html;
+
+      // Update Table Footer Sums
+      updateTableFooter(sumTarget, sumMtd, sumToday, sumTotal, sumBenchmark, sumDiff, sumBalance);
+    }
+
+    // --- VIEW 2: INDIVIDUAL CALLERS LEADERBOARD ---
+    function renderCallersView(tbody, searchTxt) {
+      var rows = [];
+      var callers = liveCallersList.slice();
+
+      callers.forEach(function(c) {
+        if (hiddenCallers.indexOf(c.id || c.officer_name) !== -1) return; // Hidden
+
+        var name = (c.officer_name || '').trim();
+        var mgrKey = (c.manager_key || '').toLowerCase();
+        var mgrTitle = MANAGER_NAMES[mgrKey] || mgrKey.toUpperCase();
+
+        if (searchTxt) {
+          var nameMatch = name.toLowerCase().indexOf(searchTxt) !== -1;
+          var mgrMatch = mgrTitle.toLowerCase().indexOf(searchTxt) !== -1;
+          if (!nameMatch && !mgrMatch) return;
+        }
+
+        var target = Number(c.target) || 0;
+        var mtd = Number(c.aoy) || Math.round(target * 0.45); // MTD base
+        var today = Number(c.today) || 0;
+        var total = mtd + today;
+        var benchmark = Number(c.projection) || Math.round(target * 0.42);
+        var diff = total - benchmark;
+        var balance = Math.max(0, target - total);
+        var achievedPct = target > 0 ? (total / target) * 100 : 0;
+
+        rows.push({
+          id: c.id,
+          name: name,
+          managerKey: mgrKey,
+          managerTitle: mgrTitle,
+          target: target,
+          mtd: mtd,
+          today: today,
+          total: total,
+          benchmark: benchmark,
+          diff: diff,
+          balance: balance,
+          achievedPct: achievedPct
+        });
+      });
+
+      // Sort callers by Achieved % Descending
+      rows.sort(function(a, b) {
+        if (b.achievedPct !== a.achievedPct) return b.achievedPct - a.achievedPct;
+        return b.total - a.total;
+      });
+
+      var html = '';
+      var sumTarget = 0, sumMtd = 0, sumToday = 0, sumTotal = 0, sumBenchmark = 0, sumDiff = 0, sumBalance = 0;
+
+      rows.forEach(function(r, idx) {
+        var rank = idx + 1;
+        var rankClass = 'rank-low';
+        if (rank <= 10) rankClass = 'rank-top';
+        else if (rank <= 30) rankClass = 'rank-mid';
+
+        var diffClass = r.diff > 0 ? 'diff-positive' : (r.diff < 0 ? 'diff-negative' : 'diff-zero');
+
+        sumTarget += r.target;
+        sumMtd += r.mtd;
+        sumToday += r.today;
+        sumTotal += r.total;
+        sumBenchmark += r.benchmark;
+        sumDiff += r.diff;
+        sumBalance += r.balance;
+
+        html += '<tr>' +
+          '<td class="col-entity">' +
+            escapeHtml(r.name) +
+            ' <span style="font-size:10px; background:#f1f5f9; color:#475569; padding:1px 6px; border-radius:4px; font-weight:700;">' + escapeHtml(r.managerTitle) + '</span>' +
+          '</td>' +
+          '<td class="col-target-val tabular">' + formatIndianNumber(r.target) + '</td>' +
+          '<td class="col-mtd-val tabular">' + formatIndianNumber(r.mtd) + '</td>' +
+          '<td class="col-today-val tabular">' + formatIndianNumber(r.today) + '</td>' +
+          '<td class="col-total-val tabular">' + formatIndianNumber(r.total) + '</td>' +
+          '<td class="col-benchmark-val tabular">' + formatIndianNumber(r.benchmark) + '</td>' +
+          '<td class="col-diff-val tabular ' + diffClass + '">' + formatDifference(r.diff) + '</td>' +
+          '<td class="col-balance-val tabular">' + formatIndianNumber(r.balance) + '</td>' +
+          '<td class="col-achieved-val tabular">' + r.achievedPct.toFixed(1) + '%</td>' +
+          '<td class="rank-cell ' + rankClass + ' tabular">' + rank + '</td>' +
+          '<td style="text-align:center;">' +
+            '<button type="button" class="btn-row-action" title="Hide caller from leaderboard" onclick="hideCallerRow(\'' + (r.id || r.name) + '\', \'' + escapeHtml(r.name) + '\')">👁</button>' +
+          '</td>' +
+        '</tr>';
+      });
+
+      if (rows.length === 0) {
+        html = '<tr><td colspan="11" style="text-align:center; padding:30px; color:var(--text-muted);">No caller records matching search.</td></tr>';
+      }
+
+      tbody.innerHTML = html;
+      updateTableFooter(sumTarget, sumMtd, sumToday, sumTotal, sumBenchmark, sumDiff, sumBalance);
+    }
+
+    function updateTableFooter(sumTarget, sumMtd, sumToday, sumTotal, sumBenchmark, sumDiff, sumBalance) {
+      document.getElementById('tfTarget').textContent = formatIndianNumber(sumTarget);
+      document.getElementById('tfMtd').textContent = formatIndianNumber(sumMtd);
+      document.getElementById('tfToday').textContent = formatIndianNumber(sumToday);
+      document.getElementById('tfTotal').textContent = formatIndianNumber(sumTotal);
+      document.getElementById('tfBenchmark').textContent = formatIndianNumber(sumBenchmark);
+
+      var tfDiff = document.getElementById('tfDifference');
+      tfDiff.textContent = formatDifference(sumDiff);
+      tfDiff.className = 'col-num tabular ' + (sumDiff > 0 ? 'diff-positive' : (sumDiff < 0 ? 'diff-negative' : 'diff-zero'));
+
+      document.getElementById('tfBalance').textContent = formatIndianNumber(sumBalance);
+      var overallPct = sumTarget > 0 ? (sumTotal / sumTarget) * 100 : 0;
+      document.getElementById('tfAchieved').textContent = overallPct.toFixed(1) + '%';
+    }
+
+    // --- ACCORDION NESTED CALLERS ROW ---
+    function toggleManagerAccordionRow(mgrKey) {
+      expandedManagerRows[mgrKey] = !expandedManagerRows[mgrKey];
+      renderLeaderboard();
+    }
+
+    function renderNestedCallersAccordion(mgrRow) {
+      var callers = mgrRow.callers || [];
+      if (callers.length === 0) {
+        return '<tr class="nested-accordion-row"><td colspan="11" style="padding:12px 20px; font-size:12px; color:var(--text-muted);">' +
+          'No caller breakdown available for ' + escapeHtml(mgrRow.name) + '.' +
+        '</td></tr>';
+      }
+
+      var callerRowsHtml = '';
+      callers.forEach(function(c, cIdx) {
+        var tgt = Number(c.target) || 0;
+        var mtd = Number(c.aoy) || Math.round(tgt * 0.45);
+        var today = Number(c.today) || 0;
+        var total = mtd + today;
+        var bmark = Number(c.projection) || Math.round(tgt * 0.42);
+        var diff = total - bmark;
+        var bal = Math.max(0, tgt - total);
+        var ach = tgt > 0 ? (total / tgt) * 100 : 0;
+        var diffClass = diff > 0 ? 'diff-positive' : (diff < 0 ? 'diff-negative' : 'diff-zero');
+
+        callerRowsHtml += '<tr>' +
+          '<td style="text-align:center; width:30px; color:#94a3b8;">' + (cIdx + 1) + '</td>' +
+          '<td style="font-weight:700; color:#0f172a;">' + escapeHtml(c.officer_name) + '</td>' +
+          '<td style="text-align:right;" class="tabular">' + formatIndianNumber(tgt) + '</td>' +
+          '<td style="text-align:right;" class="tabular">' + formatIndianNumber(mtd) + '</td>' +
+          '<td style="text-align:right; font-weight:800;" class="tabular">' + formatIndianNumber(today) + '</td>' +
+          '<td style="text-align:right; font-weight:800;" class="tabular">' + formatIndianNumber(total) + '</td>' +
+          '<td style="text-align:right;" class="tabular">' + formatIndianNumber(bmark) + '</td>' +
+          '<td style="text-align:right;" class="tabular ' + diffClass + '">' + formatDifference(diff) + '</td>' +
+          '<td style="text-align:right;" class="tabular">' + formatIndianNumber(bal) + '</td>' +
+          '<td style="text-align:center; font-weight:700;" class="tabular">' + ach.toFixed(1) + '%</td>' +
+        '</tr>';
+      });
+
+      return '<tr class="nested-accordion-row">' +
+        '<td colspan="11" style="padding:10px 18px 16px; background:#f8fafc; border-bottom:2px solid #cbd5e1;">' +
+          '<div style="font-size:11px; font-weight:800; text-transform:uppercase; color:#475569; margin-bottom:6px;">' +
+            escapeHtml(mgrRow.name) + ' · INDIVIDUAL CALLER METRICS' +
+          '</div>' +
+          '<table class="nested-table">' +
+            '<thead>' +
+              '<tr>' +
+                '<th style="width:30px;">#</th>' +
+                '<th>CALLER NAME</th>' +
+                '<th style="text-align:right;">TARGET</th>' +
+                '<th style="text-align:right;">MTD</th>' +
+                '<th style="text-align:right;">TODAY</th>' +
+                '<th style="text-align:right;">TOTAL (1 - 31)</th>' +
+                '<th style="text-align:right;">BENCHMARK</th>' +
+                '<th style="text-align:right;">DIFFERENCE</th>' +
+                '<th style="text-align:right;">BALANCE</th>' +
+                '<th style="text-align:center;">ACHIEVED %</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>' + callerRowsHtml + '</tbody>' +
+          '</table>' +
+        '</td>' +
+      '</tr>';
+    }
+
+    // ------------------------------------------------------------------------
+    // HIDE / UNHIDE MANAGERS & CALLERS
+    // ------------------------------------------------------------------------
+    function hideManagerRow(mgrKey) {
+      if (hiddenManagers.indexOf(mgrKey) === -1) {
+        hiddenManagers.push(mgrKey);
+        saveHiddenPreferences();
+        renderLeaderboard();
+        showToast("Hidden manager: " + (MANAGER_NAMES[mgrKey] || mgrKey), "info");
+      }
+    }
+
+    function hideCallerRow(idOrName, displayName) {
+      if (hiddenCallers.indexOf(idOrName) === -1) {
+        hiddenCallers.push(idOrName);
+        saveHiddenPreferences();
+        renderLeaderboard();
+        showToast("Hidden caller: " + displayName, "info");
+      }
+    }
+
+    function openHiddenItemsModal() {
+      var wrap = document.getElementById('hiddenItemsListWrap');
+      var html = '';
+
+      if (hiddenManagers.length === 0 && hiddenCallers.length === 0) {
+        html = '<div style="color:var(--text-muted); font-size:12px;">No items are currently hidden.</div>';
+      } else {
+        hiddenManagers.forEach(function(mk) {
+          html += '<div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0;">' +
+            '<div><strong>[Manager]</strong> ' + escapeHtml(MANAGER_NAMES[mk] || mk) + '</div>' +
+            '<button type="button" class="btn-outline" style="padding:2px 8px; font-size:11px;" onclick="unhideSingleItem(\'manager\', \'' + mk + '\')">Unhide</button>' +
+          '</div>';
+        });
+
+        hiddenCallers.forEach(function(cid) {
+          html += '<div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0;">' +
+            '<div><strong>[Caller]</strong> ' + escapeHtml(cid) + '</div>' +
+            '<button type="button" class="btn-outline" style="padding:2px 8px; font-size:11px;" onclick="unhideSingleItem(\'caller\', \'' + cid + '\')">Unhide</button>' +
+          '</div>';
+        });
+      }
+
+      wrap.innerHTML = html;
+      document.getElementById('hiddenItemsModal').style.display = 'flex';
+    }
+
+    function closeHiddenItemsModal() {
+      document.getElementById('hiddenItemsModal').style.display = 'none';
+    }
+
+    function unhideSingleItem(type, key) {
+      if (type === 'manager') {
+        hiddenManagers = hiddenManagers.filter(function(m) { return m !== key; });
+      } else {
+        hiddenCallers = hiddenCallers.filter(function(c) { return c !== key; });
+      }
+      saveHiddenPreferences();
+      openHiddenItemsModal();
+      renderLeaderboard();
+    }
+
+    function unhideAllItems() {
+      hiddenManagers = [];
+      hiddenCallers = [];
+      saveHiddenPreferences();
+      closeHiddenItemsModal();
+      renderLeaderboard();
+      showToast("All managers and callers restored to leaderboard.", "success");
+    }
+
+    // ------------------------------------------------------------------------
+    // EXCEL TARGET UPLOAD ENGINE
+    // ------------------------------------------------------------------------
+    function openExcelUploadModal() {
+      document.getElementById('modalUploadMonthSelect').value = activeMonthKey;
+      document.getElementById('modalBenchmarkHeaderInput').value = activeBenchmarkLabel;
+      document.getElementById('uploadPreviewSection').style.display = 'none';
+      document.getElementById('btnApplyUpload').disabled = true;
+      document.getElementById('dropzoneLabel').textContent = 'Click to browse or drag & drop Excel / CSV file here';
+      document.getElementById('excelUploadModal').style.display = 'flex';
+    }
+
+    function closeExcelUploadModal() {
+      document.getElementById('excelUploadModal').style.display = 'none';
+    }
+
+    function onModalMonthChange(val) {
+      excelUploadState.targetMonth = val;
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      document.getElementById('excelDropzone').classList.add('dragover');
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      document.getElementById('excelDropzone').classList.remove('dragover');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('excelDropzone').classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleFilePicked(e.dataTransfer.files[0]);
+      }
+    }
+
+    function handleFilePicked(file) {
+      if (!file) return;
+      document.getElementById('dropzoneLabel').textContent = '📄 ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
+
+      var isCsv = file.name.toLowerCase().endsWith('.csv');
+      if (isCsv || typeof XLSX === 'undefined') {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          parseRawTextData(e.target.result);
+        };
+        reader.readAsText(file);
+      } else {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            var data = new Uint8Array(e.target.result);
+            var workbook = XLSX.read(data, { type: 'array' });
+            var sheet = workbook.Sheets[workbook.SheetNames[0]];
+            var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+            processParsedGrid(rows);
+          } catch(err) {
+            alert("Error parsing Excel: " + err.message);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    }
+
+    function handlePasteInput() {
+      var val = document.getElementById('pasteTextarea').value.trim();
+      if (val) parseRawTextData(val);
+    }
+
+    function parseRawTextData(text) {
+      var lines = text.split(/\r?\n/).map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+      var rows = lines.map(function(line) {
+        if (line.indexOf('\t') !== -1) return line.split('\t');
+        return line.split(',');
+      });
+      processParsedGrid(rows);
+    }
+
+    function processParsedGrid(rows) {
+      if (!rows || rows.length === 0) {
+        alert("No valid rows found in sheet.");
+        return;
+      }
+
+      // Column Header Matching
+      var nameCol = -1, mgrCol = -1, tgtCol = -1, mtdCol = -1, benchCol = -1;
+      var headerRowIdx = -1;
+
+      for (var r = 0; r < Math.min(rows.length, 6); r++) {
+        var line = rows[r].map(function(cell) { return String(cell || '').toUpperCase().trim(); });
+        for (var c = 0; c < line.length; c++) {
+          var h = line[c].replace(/[^A-Z0-9]/g, '');
+          if (nameCol === -1 && (h.indexOf('OFFICER') !== -1 || h.indexOf('CALLER') !== -1 || h === 'NAME' || h === 'MANAGER')) nameCol = c;
+          if (mgrCol === -1 && (h.indexOf('MANAGER') !== -1 || h === 'TEAM' || h === 'BRANCH')) mgrCol = c;
+          if (tgtCol === -1 && (h.indexOf('TARGET') !== -1 || h === 'GOAL')) tgtCol = c;
+          if (mtdCol === -1 && (h.indexOf('MTD') !== -1 || h.indexOf('AOY') !== -1 || h.indexOf('COLLECTION') !== -1)) mtdCol = c;
+          if (benchCol === -1 && (h.indexOf('AUGUST') !== -1 || h.indexOf('BENCHMARK') !== -1 || h.indexOf('SDLM') !== -1 || h.indexOf('PREV') !== -1)) benchCol = c;
+        }
+        if (nameCol !== -1 && tgtCol !== -1) {
+          headerRowIdx = r;
+          break;
+        }
+      }
+
+      if (nameCol === -1) nameCol = 0;
+      if (tgtCol === -1) tgtCol = 1;
+      if (mtdCol === -1 && rows[0].length > 2) mtdCol = 2;
+      if (benchCol === -1 && rows[0].length > 4) benchCol = 4;
+
+      var startIdx = headerRowIdx !== -1 ? (headerRowIdx + 1) : 1;
+      var parsed = [];
+      var targetSum = 0, mtdSum = 0, benchSum = 0;
+
+      for (var i = startIdx; i < rows.length; i++) {
+        var row = rows[i];
+        if (!row || row.length === 0) continue;
+        var rawName = String(row[nameCol] || '').trim();
+        if (!rawName || rawName.toUpperCase() === 'TOTAL' || rawName.toUpperCase() === 'GRAND TOTAL') continue;
+
+        var rawMgr = mgrCol !== -1 && row[mgrCol] ? String(row[mgrCol]).trim() : '';
+        var rawTgt = tgtCol !== -1 && row[tgtCol] ? parseNumeric(row[tgtCol]) : 0;
+        var rawMtd = mtdCol !== -1 && row[mtdCol] ? parseNumeric(row[mtdCol]) : 0;
+        var rawBench = benchCol !== -1 && row[benchCol] ? parseNumeric(row[benchCol]) : 0;
+
+        targetSum += rawTgt;
+        mtdSum += rawMtd;
+        benchSum += rawBench;
+
+        parsed.push({
+          name: rawName,
+          manager: rawMgr || 'Ambuj',
+          target: rawTgt,
+          mtd: rawMtd,
+          benchmark: rawBench
+        });
+      }
+
+      excelUploadState.parsedRows = parsed;
+      excelUploadState.stats = {
+        count: parsed.length,
+        targetSum: targetSum,
+        mtdSum: mtdSum,
+        benchSum: benchSum
+      };
+
+      renderUploadPreview();
+    }
+
+    function renderUploadPreview() {
+      var rows = excelUploadState.parsedRows;
+      var stats = excelUploadState.stats;
+
+      document.getElementById('previewRowsCount').textContent = stats.count;
+      document.getElementById('previewTargetSum').textContent = '₹' + formatIndianNumber(stats.targetSum);
+      document.getElementById('previewMtdSum').textContent = '₹' + formatIndianNumber(stats.mtdSum);
+      document.getElementById('previewBenchmarkSum').textContent = '₹' + formatIndianNumber(stats.benchSum);
+
+      var tbody = document.getElementById('previewTbody');
+      var html = '';
+
+      rows.slice(0, 15).forEach(function(r, idx) {
+        html += '<tr>' +
+          '<td>' + (idx + 1) + '</td>' +
+          '<td><strong>' + escapeHtml(r.name) + '</strong></td>' +
+          '<td>' + escapeHtml(r.manager) + '</td>' +
+          '<td style="text-align:right;" class="tabular">' + formatIndianNumber(r.target) + '</td>' +
+          '<td style="text-align:right;" class="tabular">' + formatIndianNumber(r.mtd) + '</td>' +
+          '<td style="text-align:right;" class="tabular">' + formatIndianNumber(r.benchmark) + '</td>' +
+          '<td><span style="color:#15803d; font-weight:700;">Ready</span></td>' +
+        '</tr>';
+      });
+
+      if (rows.length > 15) {
+        html += '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">+ ' + (rows.length - 15) + ' more rows in spreadsheet...</td></tr>';
+      }
+
+      tbody.innerHTML = html;
+      document.getElementById('uploadPreviewSection').style.display = 'block';
+      var btn = document.getElementById('btnApplyUpload');
+      btn.disabled = false;
+      btn.textContent = '🚀 Apply & Sync ' + rows.length + ' Targets to Supabase in One Go';
+    }
+
+    // ------------------------------------------------------------------------
+    // APPLY EXCEL UPLOAD IN ONE GO (SUPABASE + LOCAL STORAGE)
+    // ------------------------------------------------------------------------
+    async function applyExcelUploadInOneGo() {
+      var rows = excelUploadState.parsedRows;
+      if (!rows || rows.length === 0) return;
+
+      var monthKey = document.getElementById('modalUploadMonthSelect').value || activeMonthKey;
+      var bmarkLabel = document.getElementById('modalBenchmarkHeaderInput').value || activeBenchmarkLabel;
+      var chkSyncDb = document.getElementById('chkSyncToSupabase').checked;
+      var chkResetShift = document.getElementById('chkResetLiveShiftToday').checked;
+
+      var btn = document.getElementById('btnApplyUpload');
+      btn.disabled = true;
+      btn.textContent = 'Saving to Supabase...';
+      setSyncStatus(true, "Saving targets...");
+
+      // 1. Group by manager
+      var mgrAggregates = {};
+      RAW_MANAGERS_ORDER.forEach(function(mk) {
+        mgrAggregates[mk] = { target: 0, mtd: 0, benchmark: 0 };
+      });
+
+      rows.forEach(function(r) {
+        var lowerName = r.name.toLowerCase();
+        var matchedKey = '';
+
+        RAW_MANAGERS_ORDER.forEach(function(mk) {
+          if (lowerName.indexOf(mk) !== -1 || (MANAGER_NAMES[mk] && lowerName.indexOf(MANAGER_NAMES[mk].toLowerCase()) !== -1)) {
+            matchedKey = mk;
+          }
+        });
+
+        if (matchedKey) {
+          mgrAggregates[matchedKey].target = r.target;
+          mgrAggregates[matchedKey].mtd = r.mtd;
+          mgrAggregates[matchedKey].benchmark = r.benchmark;
+        }
+      });
+
+      var archivePayload = {
+        monthKey: monthKey,
+        monthLabel: getMonthName(monthKey),
+        benchmarkDateLabel: bmarkLabel,
+        uploadedAt: new Date().toISOString(),
+        uploadedBy: 'Excel Bulk Sync',
+        callers: rows,
+        managers: mgrAggregates
+      };
+
+      // 2. Save in localStorage
+      localStorage.setItem('shaha_monthly_targets_' + monthKey, JSON.stringify(archivePayload));
+      localStorage.setItem('shaha_manager_targets', JSON.stringify(mgrAggregates));
+
+      // 3. Save into Supabase Database
+      if (chkSyncDb) {
+        try {
+          var archiveUsername = '__monthly_targets_' + monthKey + '__';
+          var existing = await sbFetch('users?username=eq.' + encodeURIComponent(archiveUsername) + '&limit=1');
+
+          if (Array.isArray(existing) && existing.length > 0) {
+            await sbFetch('users?id=eq.' + encodeURIComponent(existing[0].id), {
+              method: 'PATCH',
+              body: {
+                display_name: JSON.stringify(archivePayload),
+                manager_key: monthKey
+              }
+            });
+          } else {
+            await sbFetch('users', {
+              method: 'POST',
+              body: {
+                username: archiveUsername,
+                password: 'archive_protected_1234',
+                role: 'viewer',
+                display_name: JSON.stringify(archivePayload),
+                manager_key: monthKey
+              }
+            });
+          }
+
+          // 4. Update caller records in Supabase callers table if rows contain individual officers
+          for (var ci = 0; ci < rows.length; ci++) {
+            var cr = rows[ci];
+            var matchCaller = liveCallersList.find(function(c) {
+              return (c.officer_name || '').trim().toLowerCase() === cr.name.trim().toLowerCase();
+            });
+
+            if (matchCaller) {
+              var patchBody = {
+                target: cr.target,
+                aoy: cr.mtd,
+                projection: cr.benchmark,
+                updated_at: new Date().toISOString()
+              };
+              if (chkResetShift) patchBody.today = 0;
+
+              await sbFetch('callers?id=eq.' + encodeURIComponent(matchCaller.id), {
+                method: 'PATCH',
+                body: patchBody
+              });
+            }
+          }
+        } catch(err) {
+          console.error("Supabase sync error:", err);
+          showToast("Saved locally. Supabase error: " + err.message, "warning");
+        }
+      }
+
+      // Update state & UI
+      activeMonthKey = monthKey;
+      activeBenchmarkLabel = bmarkLabel;
+      document.getElementById('thBenchmarkDate').textContent = activeBenchmarkLabel;
+      document.getElementById('monthSelectDropdown').value = activeMonthKey;
+
+      closeExcelUploadModal();
+      checkNewMonthStatus();
+      await loadFloorData();
+
+      showToast("Targets successfully applied and synced for " + getMonthName(monthKey) + "!", "success");
+    }
+
+    // ------------------------------------------------------------------------
+    // EXPORT & TEMPLATE DOWNLOADS
+    // ------------------------------------------------------------------------
+    function downloadLeaderboardTemplate() {
+      var rows = [
+        ['OFFICER / CALLER NAME', 'MANAGER', 'TARGET (₹)', 'MTD (₹)', activeBenchmarkLabel]
+      ];
+
+      if (liveCallersList.length > 0) {
+        liveCallersList.forEach(function(c) {
+          rows.push([
+            c.officer_name || '',
+            MANAGER_NAMES[c.manager_key] || c.manager_key || 'Ambuj',
+            c.target || 250000,
+            c.aoy || 120000,
+            c.projection || 100000
+          ]);
+        });
+      } else {
+        DEFAULT_LEADERBOARD_MANAGERS.forEach(function(m) {
+          rows.push([m.name, m.name, m.target, m.mtd, m.benchmark]);
+        });
+      }
+
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Targets_Template");
+      XLSX.writeFile(wb, "Shaha_Targets_Template_" + activeMonthKey + ".xlsx");
+      showToast("Downloaded target template (.xlsx)", "info");
+    }
+
+    function exportLeaderboardToExcel() {
+      var table = document.getElementById('mainLeaderboardTable');
+      var wb = XLSX.utils.table_to_book(table, { sheet: "Leaderboard" });
+      XLSX.writeFile(wb, "Shaha_Performance_Leaderboard_" + activeMonthKey + ".xlsx");
+      showToast("Exported leaderboard to Excel (.xlsx)", "success");
+    }
+
+    function onSearchFilterChanged() {
+      renderLeaderboard();
+    }
+
+    function showToast(msg, type) {
+      var t = document.getElementById('toastBox');
+      var m = document.getElementById('toastMessage');
+      if (t && m) {
+        m.textContent = (type === 'success' ? '✅ ' : (type === 'warning' ? '⚠️ ' : 'ℹ️ ')) + msg;
+        t.classList.add('show');
+        setTimeout(function() {
+          t.classList.remove('show');
+        }, 3200);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

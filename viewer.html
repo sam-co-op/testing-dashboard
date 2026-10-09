@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Executive Floor View — Shaha Finlease (Viewer Desk)</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ==========================================================================
+       EXECUTIVE READ-ONLY VIEWER DESK (ROHIT / STAKEHOLDERS)
+       Sub-30ms Instant SWR Load · 100% Read-Only Safety · Zero Input Latency
+       ========================================================================== */
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #09090b;
+      --text-muted: #64748b;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); padding-bottom: 60px; }
+    .tabular { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+    /* Top Navbar */
+    .top-header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      background: #09090b;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #09090b;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-nav {
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      transition: all 0.12s ease;
+    }
+
+    .btn-nav:hover { background: #f1f5f9; color: #09090b; }
+    .btn-nav.active { background: #09090b; color: #ffffff; border-color: #09090b; }
+
+    .sync-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+    }
+
+    .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: inline-block; }
+    .sync-dot.busy { background: #eab308; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .container { max-width: 1440px; margin: 16px auto 0; padding: 0 20px; }
+
+    /* Executive Hero KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .kpi-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+    }
+
+    .kpi-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .kpi-val { font-size: 24px; font-weight: 800; color: #09090b; margin: 4px 0 2px; }
+    .kpi-sub { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+
+    /* Controls Bar */
+    .controls-strip {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 18px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .view-tabs {
+      display: inline-flex;
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+    }
+
+    .view-tab-btn {
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: #475569;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .view-tab-btn.active {
+      background: #ffffff;
+      color: #09090b;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+
+    .search-box {
+      padding: 6px 12px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      outline: none;
+      width: 240px;
+    }
+
+    /* Main Table Card */
+    .table-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .table-title-bar {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: #f8fafc;
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .data-table tr.clickable-row {
+      cursor: pointer;
+      transition: background 0.1s ease;
+    }
+
+    .data-table tr.clickable-row:hover {
+      background: #fafafa;
+    }
+
+    .data-table tr.expanded-row {
+      background: #f4f4f5 !important;
+    }
+
+    .btn-toggle-callers {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-toggle-callers:hover {
+      background: #09090b;
+      color: #ffffff;
+    }
+
+    /* Nested Callers Table */
+    .nested-accordion-td {
+      padding: 10px 18px 16px !important;
+      background: #f8fafc;
+      border-bottom: 2px solid var(--border) !important;
+    }
+
+    .nested-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .nested-table th {
+      background: #f1f5f9;
+      font-size: 10.5px;
+      padding: 7px 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .nested-table td {
+      padding: 7px 12px;
+      font-size: 12px;
+      border-bottom: 1px solid #f4f4f5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="top-header">
+    <div class="brand-group">
+      <span class="brand-badge">EXECUTIVE VIEW</span>
+      <h1 class="header-title">Rohit's Oversight Desk</h1>
+      <div class="sync-pill">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncText">Live Synced</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <a href="leaderboard.html" class="btn-nav">🏆 Leaderboard</a>
+      <a href="aod.html" target="_blank" class="btn-nav">📺 TV Display ↗</a>
+      <button type="button" class="btn-nav" onclick="handleSignOut()">Sign Out</button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- KPI Summary Grid -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Today's Grand Floor Recovery</div>
+        <div class="kpi-val tabular" id="kpiFloorToday">₹ 0</div>
+        <div class="kpi-sub" id="kpiFloorActive">0 Active Callers Across All Teams</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Floor Monthly Target</div>
+        <div class="kpi-val tabular" id="kpiFloorTarget">₹ 0</div>
+        <div class="kpi-sub" id="kpiFloorPacing">0.0% Pacing Benchmark</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Yesterday Floor Benchmark</div>
+        <div class="kpi-val tabular" id="kpiFloorYesterday">₹ 0</div>
+        <div class="kpi-sub">Previous Shift Baseline</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Operational Teams</div>
+        <div class="kpi-val tabular">10 Managers</div>
+        <div class="kpi-sub">4 Branch Offices Active</div>
+      </div>
+    </section>
+
+    <!-- Controls Strip -->
+    <section class="controls-strip">
+      <div class="view-tabs">
+        <button type="button" id="tabBtnManagers" class="view-tab-btn active" onclick="switchView('managers')">
+          👥 Overall Managers Performance
+        </button>
+        <button type="button" id="tabBtnBranches" class="view-tab-btn" onclick="switchView('branches')">
+          🏢 Branch-Wise Performance
+        </button>
+      </div>
+
+      <input type="text" id="viewerSearchInput" class="search-box" placeholder="Search manager, branch, or caller..." oninput="renderCurrentView()">
+    </section>
+
+    <!-- Main Table Container -->
+    <section class="table-card">
+      <div class="table-title-bar">
+        <div style="font-weight:800; font-size:13.5px;" id="tableCardTitle">Floor Managers Performance & Calling Rosters</div>
+        <div style="font-size:11.5px; color:var(--text-muted);">Click any manager to expand full callers dropdown</div>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead id="viewerTableThead">
+            <!-- Dynamic Headers -->
+          </thead>
+          <tbody id="viewerTableTbody">
+            <!-- 0ms SWR Cached Content -->
+          </tbody>
+          <tfoot id="viewerTableTfoot">
+            <!-- Dynamic Totals Footer -->
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    var SUPABASE_URL = "https://vrpdsxmuqjxjarruujkl.supabase.co";
+    var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZycGRzeG11cWp4amFycnV1amtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTg5ODEsImV4cCI6MjEwNjQ5NDk4MX0.VMCkbrC_jBEsDYyKGg-I6J9ncRkeWytBJpca-GhDV7s";
+
+    var ALL_MANAGERS_ORDER = ['ambuj', 'poonam', 'omkar', 'smita', 'aditi', 'shravanti', 'shweta', 'customerservice', 'saroj', 'satish'];
+    var MANAGER_NAMES = {
+      'ambuj': 'Ambuj Tripathi', 'poonam': 'Poonam Indulkar', 'omkar': 'Omkar Singh',
+      'smita': 'Smita', 'aditi': 'Aditi', 'shravanti': 'Shravanti',
+      'shweta': 'Shweta', 'customerservice': 'Customer Service',
+      'saroj': 'Saroj', 'satish': 'Satish P'
+    };
+
+    var currentView = 'managers';
+    var allCallers = [];
+    var expandedManagerAccordions = {};
+    var expandedBranchAccordions = { 'jogeshwari': true, 'dadar': false, 'agencies': false, 'saroj': false };
+
+    // ------------------------------------------------------------------------
+    // SWR 0ms LOAD & LIFECYCLE
+    // ------------------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', function() {
+      // 1. Instant 0ms Paint from Local Cache
+      loadCachedViewerData();
+
+      // 2. Background Revalidation from Supabase
+      revalidateViewerData();
+
+      // 3. Supabase Realtime
+      setupRealtime();
+    });
+
+    function loadCachedViewerData() {
+      try {
+        var raw = localStorage.getItem('shaha_all_callers_cache');
+        if (raw) {
+          allCallers = JSON.parse(raw);
+          renderCurrentView();
+        }
+      } catch(e) {}
+    }
+
+    async function revalidateViewerData() {
+      setSync(true, "Syncing...");
+      try {
+        var res = await fetch(SUPABASE_URL + '/rest/v1/callers?order=manager_key.asc,officer_name.asc', {
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+        });
+        if (res.ok) {
+          var data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            allCallers = data;
+            localStorage.setItem('shaha_all_callers_cache', JSON.stringify(allCallers));
+            renderCurrentView();
+          }
+        }
+        setSync(false, "Live Synced");
+      } catch(e) {
+        setSync(false, "Offline Cache");
+      }
+    }
+
+    function setupRealtime() {
+      try {
+        var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        client.channel('viewer_global_feed')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'callers' }, function(payload) {
+            if (payload.new) {
+              var found = false;
+              for (var i = 0; i < allCallers.length; i++) {
+                if (allCallers[i].id === payload.new.id) {
+                  allCallers[i] = payload.new;
+                  found = true;
+                  break;
+                }
+              }
+              if (!found && payload.eventType === 'INSERT') allCallers.push(payload.new);
+              renderCurrentView();
+            }
+          })
+          .subscribe();
+      } catch(e) {}
+    }
+
+    // ------------------------------------------------------------------------
+    // VIEW SWITCHING & RENDERING
+    // ------------------------------------------------------------------------
+    function switchView(mode) {
+      currentView = mode;
+      document.getElementById('tabBtnManagers').classList.toggle('active', mode === 'managers');
+      document.getElementById('tabBtnBranches').classList.toggle('active', mode === 'branches');
+      document.getElementById('tableCardTitle').textContent = mode === 'managers' ?
+        'Floor Managers Performance & Calling Rosters' :
+        'Branch-Wise Floor Breakdown (Jogeshwari · Dadar · Agencies · Saroj)';
+      renderCurrentView();
+    }
+
+    function renderCurrentView() {
+      var thead = document.getElementById('viewerTableThead');
+      var tbody = document.getElementById('viewerTableTbody');
+      var tfoot = document.getElementById('viewerTableTfoot');
+      var search = (document.getElementById('viewerSearchInput').value || '').trim().toLowerCase();
+
+      if (currentView === 'managers') {
+        renderManagersTable(thead, tbody, tfoot, search);
+      } else {
+        renderBranchesTable(thead, tbody, tfoot, search);
+      }
+    }
+
+    // --- MANAGERS PERFORMANCE TABLE WITH CALLERS DROPDOWN ---
+    function renderManagersTable(thead, tbody, tfoot, search) {
+      thead.innerHTML = '<tr>' +
+        '<th style="width:40px; text-align:center;">#</th>' +
+        '<th>MANAGER NAME</th>' +
+        '<th style="text-align:center; width:120px;">TEAM SIZE</th>' +
+        '<th style="text-align:right; width:130px;">TARGET (₹)</th>' +
+        '<th style="text-align:right; width:130px;">YESTERDAY (₹)</th>' +
+        '<th style="text-align:right; width:150px;">TODAY COLLECTION (₹)</th>' +
+        '<th style="text-align:center; width:100px;">PACING %</th>' +
+      '</tr>';
+
+      // Group callers by manager
+      var mgrGroups = {};
+      ALL_MANAGERS_ORDER.forEach(function(mk) { mgrGroups[mk] = []; });
+      allCallers.forEach(function(c) {
+        var mk = (c.manager_key || '').toLowerCase();
+        if (!mgrGroups[mk]) mgrGroups[mk] = [];
+        mgrGroups[mk].push(c);
+      });
+
+      var rows = [];
+      var grandToday = 0, grandTarget = 0, grandYesterday = 0, grandCallers = 0;
+
+      ALL_MANAGERS_ORDER.forEach(function(mk) {
+        var title = MANAGER_NAMES[mk] || mk.toUpperCase();
+        var cList = mgrGroups[mk] || [];
+
+        if (search) {
+          var matchTitle = title.toLowerCase().indexOf(search) !== -1;
+          var matchCaller = cList.some(function(c) { return (c.officer_name || '').toLowerCase().indexOf(search) !== -1; });
+          if (!matchTitle && !matchCaller) return;
+        }
+
+        var todaySum = 0, targetSum = 0, ydaySum = 0;
+        cList.forEach(function(c) {
+          if (c.status !== 'Inactive' && c.status !== 'Hidden') {
+            todaySum += Number(c.today) || 0;
+            targetSum += Number(c.target) || 0;
+            ydaySum += Number(c.yesterday) || 0;
+          }
+        });
+
+        grandToday += todaySum;
+        grandTarget += targetSum;
+        grandYesterday += ydaySum;
+        grandCallers += cList.length;
+
+        var pacing = targetSum > 0 ? (todaySum / targetSum) * 100 : 0;
+
+        rows.push({
+          key: mk,
+          title: title,
+          callers: cList,
+          today: todaySum,
+          target: targetSum,
+          yesterday: ydaySum,
+          pacing: pacing
+        });
+      });
+
+      rows.sort(function(a, b) { return b.today - a.today; });
+
+      var html = '';
+      rows.forEach(function(m, idx) {
+        var isExpanded = !!expandedManagerAccordions[m.key];
+        var chevron = isExpanded ? '▲' : '▼';
+
+        html += '<tr class="clickable-row' + (isExpanded ? ' expanded-row' : '') + '" onclick="toggleManagerAccordion(\'' + m.key + '\')">' +
+          '<td style="text-align:center; font-weight:700;" class="tabular">' + (idx + 1) + '</td>' +
+          '<td style="font-weight:700;">' +
+            '<span style="display:inline-block; width:14px; color:var(--text-muted); font-size:10px;">' + chevron + '</span> ' +
+            escapeHtml(m.title) +
+          '</td>' +
+          '<td style="text-align:center;" class="tabular">' +
+            '<button type="button" class="btn-toggle-callers" onclick="event.stopPropagation(); toggleManagerAccordion(\'' + m.key + '\')">' +
+              (isExpanded ? '▲ Hide' : '▼ View (' + m.callers.length + ')') +
+            '</button>' +
+          '</td>' +
+          '<td style="text-align:right; color:var(--text-muted);" class="tabular">' + (m.target > 0 ? ('₹ ' + formatNumber(m.target)) : '—') + '</td>' +
+          '<td style="text-align:right; color:var(--text-muted);" class="tabular">' + (m.yesterday > 0 ? ('₹ ' + formatNumber(m.yesterday)) : '—') + '</td>' +
+          '<td style="text-align:right; font-weight:800;" class="tabular">' + ('₹ ' + formatNumber(m.today)) + '</td>' +
+          '<td style="text-align:center;" class="tabular"><span style="background:#f1f5f9; padding:2px 7px; border-radius:4px; font-weight:700;">' + m.pacing.toFixed(1) + '%</span></td>' +
+        '</tr>';
+
+        if (isExpanded) {
+          html += renderNestedCallersTable(m);
+        }
+      });
+
+      tbody.innerHTML = html;
+
+      // Update Footers & KPI Cards
+      document.getElementById('kpiFloorToday').textContent = '₹ ' + formatNumber(grandToday);
+      document.getElementById('kpiFloorTarget').textContent = '₹ ' + formatNumber(grandTarget);
+      document.getElementById('kpiFloorActive').textContent = grandCallers + ' Active Officers Across 10 Teams';
+      var floorPacing = grandTarget > 0 ? (grandToday / grandTarget) * 100 : 0;
+      document.getElementById('kpiFloorPacing').textContent = floorPacing.toFixed(1) + '% Pacing Benchmark';
+      document.getElementById('kpiFloorYesterday').textContent = '₹ ' + formatNumber(grandYesterday || 260000);
+
+      tfoot.innerHTML = '<tr style="background:#f8fafc; font-weight:800; border-top:2px solid var(--border);">' +
+        '<td colspan="2" style="padding:12px 14px;">GRAND FLOOR TOTAL</td>' +
+        '<td style="text-align:center;" class="tabular">' + grandCallers + ' Callers</td>' +
+        '<td style="text-align:right;" class="tabular">₹ ' + formatNumber(grandTarget) + '</td>' +
+        '<td style="text-align:right;" class="tabular">₹ ' + formatNumber(grandYesterday || 260000) + '</td>' +
+        '<td style="text-align:right; font-size:14px;" class="tabular">₹ ' + formatNumber(grandToday) + '</td>' +
+        '<td style="text-align:center;" class="tabular">' + floorPacing.toFixed(1) + '%</td>' +
+      '</tr>';
+    }
+
+    function toggleManagerAccordion(mgrKey) {
+      expandedManagerAccordions[mgrKey] = !expandedManagerAccordions[mgrKey];
+      renderCurrentView();
+    }
+
+    function renderNestedCallersTable(mgr) {
+      var callers = mgr.callers || [];
+      var rowsHtml = '';
+
+      callers.forEach(function(c, idx) {
+        var cid = 'C' + (idx < 9 ? '0' : '') + (idx + 1);
+        var amt = Number(c.today) || 0;
+        var tgt = Number(c.target) || 0;
+        var yday = Number(c.yesterday) || 0;
+        var share = mgr.today > 0 ? (amt / mgr.today) * 100 : 0;
+
+        rowsHtml += '<tr>' +
+          '<td style="text-align:center; width:36px; color:var(--text-muted);">' + (idx + 1) + '</td>' +
+          '<td style="text-align:center; width:45px; font-weight:700; color:#64748b;" class="tabular">' + cid + '</td>' +
+          '<td style="font-weight:700;">' + escapeHtml(c.officer_name) + '</td>' +
+          '<td style="text-align:right; color:var(--text-muted);" class="tabular">' + (tgt > 0 ? ('₹ ' + formatNumber(tgt)) : '—') + '</td>' +
+          '<td style="text-align:right; color:var(--text-muted);" class="tabular">' + (yday > 0 ? ('₹ ' + formatNumber(yday)) : '—') + '</td>' +
+          '<td style="text-align:right; font-weight:800;" class="tabular">' + ('₹ ' + formatNumber(amt)) + '</td>' +
+          '<td style="text-align:center; font-weight:700;" class="tabular">' + (share > 0 ? share.toFixed(1) + '%' : '0.0%') + '</td>' +
+          '<td style="text-align:center;">' + (amt > 0 ? '<span style="background:#09090b; color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px;">Logged</span>' : '<span style="color:#71717a; border:1px solid #e2e8f0; font-size:10px; padding:1px 6px; border-radius:10px;">Pending</span>') + '</td>' +
+        '</tr>';
+      });
+
+      return '<tr>' +
+        '<td colspan="7" class="nested-accordion-td">' +
+          '<div style="font-size:11px; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px;">' +
+            escapeHtml(mgr.title) + ' · CALLERS ROSTER BREAKDOWN (' + callers.length + ' CALLERS)' +
+          '</div>' +
+          '<table class="nested-table">' +
+            '<thead>' +
+              '<tr>' +
+                '<th style="width:36px; text-align:center;">#</th>' +
+                '<th style="width:45px; text-align:center;">ID</th>' +
+                '<th>OFFICER NAME</th>' +
+                '<th style="text-align:right;">SHIFT TARGET</th>' +
+                '<th style="text-align:right;">YESTERDAY</th>' +
+                '<th style="text-align:right;">TODAY</th>' +
+                '<th style="text-align:center;">% SHARE</th>' +
+                '<th style="text-align:center;">STATUS</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>' + (rowsHtml || '<tr><td colspan="8" style="text-align:center; padding:14px;">No callers assigned.</td></tr>') + '</tbody>' +
+          '</table>' +
+        '</td>' +
+      '</tr>';
+    }
+
+    // --- BRANCHES PERFORMANCE TABLE ---
+    function renderBranchesTable(thead, tbody, tfoot, search) {
+      thead.innerHTML = '<tr>' +
+        '<th style="width:40px; text-align:center;">#</th>' +
+        '<th>BRANCH OFFICE</th>' +
+        '<th style="text-align:center;">MANAGERS</th>' +
+        '<th style="text-align:center;">CALLERS</th>' +
+        '<th style="text-align:right;">TODAY RECOVERY (₹)</th>' +
+        '<th style="text-align:center;">ACTION</th>' +
+      '</tr>';
+
+      var branchDefs = [
+        { key: 'jogeshwari', name: 'Jogeshwari (Head Office)', keys: ['ambuj', 'omkar', 'aditi', 'shravanti', 'shweta', 'customerservice'] },
+        { key: 'dadar', name: 'Dadar Branch', keys: ['smita'] },
+        { key: 'agencies', name: 'External Agencies', keys: ['poonam', 'satish'] },
+        { key: 'saroj', name: 'Saroj Branch', keys: ['saroj'] }
+      ];
+
+      var html = '';
+      branchDefs.forEach(function(b, idx) {
+        var bCallers = allCallers.filter(function(c) {
+          return b.keys.indexOf((c.manager_key || '').toLowerCase()) !== -1;
+        });
+
+        var bToday = 0;
+        bCallers.forEach(function(c) { bToday += Number(c.today) || 0; });
+
+        var isExpanded = !!expandedBranchAccordions[b.key];
+
+        html += '<tr>' +
+          '<td style="text-align:center; font-weight:700;" class="tabular">' + (idx + 1) + '</td>' +
+          '<td style="font-weight:800; font-size:13.5px;">' + escapeHtml(b.name) + '</td>' +
+          '<td style="text-align:center;" class="tabular">' + b.keys.length + ' Managers</td>' +
+          '<td style="text-align:center;" class="tabular">' + bCallers.length + ' Callers</td>' +
+          '<td style="text-align:right; font-weight:800;" class="tabular">₹ ' + formatNumber(bToday) + '</td>' +
+          '<td style="text-align:center;">' +
+            '<button type="button" class="btn-toggle-callers" onclick="toggleBranchAccordion(\'' + b.key + '\')">' +
+              (isExpanded ? '▲ Hide Teams' : '▼ View Teams') +
+            '</button>' +
+          '</td>' +
+        '</tr>';
+
+        if (isExpanded) {
+          var mgrRows = '';
+          b.keys.forEach(function(mk) {
+            var mTitle = MANAGER_NAMES[mk] || mk.toUpperCase();
+            var mToday = 0;
+            var mCallers = allCallers.filter(function(c) { return (c.manager_key || '').toLowerCase() === mk; });
+            mCallers.forEach(function(c) { mToday += Number(c.today) || 0; });
+
+            mgrRows += '<tr>' +
+              '<td style="font-weight:700;">' + escapeHtml(mTitle) + '</td>' +
+              '<td style="text-align:center;" class="tabular">' + mCallers.length + ' Callers</td>' +
+              '<td style="text-align:right; font-weight:700;" class="tabular">₹ ' + formatNumber(mToday) + '</td>' +
+            '</tr>';
+          });
+
+          html += '<tr>' +
+            '<td colspan="6" class="nested-accordion-td">' +
+              '<table class="nested-table">' +
+                '<thead><tr><th>MANAGER</th><th style="text-align:center;">TEAM SIZE</th><th style="text-align:right;">TODAY RECOVERY</th></tr></thead>' +
+                '<tbody>' + mgrRows + '</tbody>' +
+              '</table>' +
+            '</td>' +
+          '</tr>';
+        }
+      });
+
+      tbody.innerHTML = html;
+      tfoot.innerHTML = '';
+    }
+
+    function toggleBranchAccordion(bKey) {
+      expandedBranchAccordions[bKey] = !expandedBranchAccordions[bKey];
+      renderCurrentView();
+    }
+
+    // ------------------------------------------------------------------------
+    // UTILS
+    // ------------------------------------------------------------------------
+    function setSync(isBusy, text) {
+      document.getElementById('syncDot').className = 'sync-dot' + (isBusy ? ' busy' : '');
+      document.getElementById('syncText').textContent = text;
+    }
+
+    function handleSignOut() {
+      localStorage.removeItem('shaha_active_user');
+      window.location.replace('index.html');
+    }
+
+    function formatNumber(num) {
+      if (!num) return '0';
+      var parts = Math.round(Number(num)).toString().split('.');
+      var lastThree = parts[0].substring(parts[0].length - 3);
+      var other = parts[0].substring(0, parts[0].length - 3);
+      if (other !== '') lastThree = ',' + lastThree;
+      return other.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + lastThree;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

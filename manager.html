@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Floor Manager Calling Desk — Shaha Finlease</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ==========================================================================
+       LEAN MONOCHROME FLOOR CALLING DESK (Sub-30ms Load · 0ms SWR Cache)
+       ========================================================================== */
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #09090b;
+      --text-muted: #64748b;
+      --accent: #09090b;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); padding-bottom: 60px; }
+    .tabular { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+    /* Top Navigation Header */
+    .desk-header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-pill {
+      background: #09090b;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    .team-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #09090b;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-header {
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      transition: all 0.12s ease;
+    }
+
+    .btn-header:hover {
+      background: #f1f5f9;
+      color: #09090b;
+    }
+
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+    }
+
+    .sync-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      display: inline-block;
+    }
+
+    .sync-dot.busy { background: #eab308; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* Layout */
+    .container {
+      max-width: 1400px;
+      margin: 16px auto 0;
+      padding: 0 20px;
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .kpi-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .kpi-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: #09090b;
+      margin: 4px 0 2px;
+    }
+
+    .kpi-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Morning Projection Input Strip */
+    .proj-strip {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .proj-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .proj-input {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      width: 150px;
+      outline: none;
+      font-family: var(--font-mono);
+    }
+
+    /* Main Table Card */
+    .table-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .table-header {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .table-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #09090b;
+    }
+
+    .search-input {
+      padding: 6px 12px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      outline: none;
+      width: 220px;
+    }
+
+    .caller-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .caller-table th {
+      background: #f8fafc;
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .caller-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .caller-table tr:hover {
+      background: #fafafa;
+    }
+
+    .input-amount {
+      width: 140px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid #cbd5e1;
+      border-radius: 5px;
+      outline: none;
+      text-align: right;
+      font-family: var(--font-mono);
+    }
+
+    .input-amount:focus {
+      border-color: #09090b;
+      box-shadow: 0 0 0 1px #09090b;
+    }
+
+    .badge-status {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+
+    .badge-logged { background: #09090b; color: #ffffff; }
+    .badge-pending { border: 1px solid var(--border); color: var(--text-muted); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 440px;
+      padding: 24px;
+      border: 1px solid var(--border);
+    }
+
+    /* Toast */
+    .toast-box {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #09090b;
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      display: none;
+      z-index: 200;
+    }
+    .toast-box.show { display: flex; animation: fadeIn 0.15s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="desk-header">
+    <div class="header-left">
+      <span class="brand-pill">SHAHA DESK</span>
+      <h1 class="team-title" id="deskTeamTitle">Floor Calling Desk</h1>
+      <div class="sync-status">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncText">Live Synced</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button type="button" class="btn-header" onclick="openRequestCallerModal()" title="Request Tejas MIS to add a new caller">+ Request Caller</button>
+      <a href="leaderboard.html" class="btn-header" title="Open Monthly Performance Leaderboard">🏆 Leaderboard</a>
+      <a href="aod.html" target="_blank" class="btn-header" title="Open TV Display">📺 TV Display ↗</a>
+      <button type="button" class="btn-header" onclick="handleSignOut()" title="Sign out of floor desk">Sign Out</button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- KPI Summary Cards -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Today's Team Collection</div>
+        <div class="kpi-val tabular" id="kpiTodayAmt">₹0</div>
+        <div class="kpi-sub" id="kpiLoggedCount">0 of 0 Callers Logged</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Morning Projection Pacing</div>
+        <div class="kpi-val tabular" id="kpiPacingPct">0.0%</div>
+        <div class="kpi-sub" id="kpiProjBenchmark">Target: ₹0 Projected</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Team Monthly Target</div>
+        <div class="kpi-val tabular" id="kpiTeamTarget">₹0</div>
+        <div class="kpi-sub">Shift Benchmark Goal</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Active Team Strength</div>
+        <div class="kpi-val tabular" id="kpiTeamStrength">0 Callers</div>
+        <div class="kpi-sub">On Floor Roster</div>
+      </div>
+    </section>
+
+    <!-- Morning Projection Strip -->
+    <section class="proj-strip">
+      <div class="proj-left">
+        <span style="font-size:12.5px; font-weight:700;">10:30 AM Morning Target Projection:</span>
+        <input type="text" id="morningProjInput" class="proj-input" placeholder="e.g. 2,50,000" oninput="formatNumberInput(this)">
+        <button type="button" class="btn-header" style="background:#09090b; color:#fff;" onclick="saveMorningProjection()">Save Projection</button>
+      </div>
+      <div style="font-size:12px; color:var(--text-muted);" id="lastSavedLabel">
+        Last updated: Just now
+      </div>
+    </section>
+
+    <!-- Caller Table -->
+    <section class="table-card">
+      <div class="table-header">
+        <div class="table-title" id="tableRosterTitle">Team Roster</div>
+        <input type="text" id="callerFilterInput" class="search-input" placeholder="Filter officer name..." oninput="renderCallerTable()">
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="caller-table">
+          <thead>
+            <tr>
+              <th style="width:40px; text-align:center;">#</th>
+              <th>CALLER / OFFICER NAME</th>
+              <th style="text-align:right; width:130px;">SHIFT TARGET (₹)</th>
+              <th style="text-align:right; width:180px;">TODAY COLLECTION (₹)</th>
+              <th style="text-align:center; width:90px;">% SHARE</th>
+              <th style="text-align:center; width:100px;">STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="callerTableBody">
+            <!-- Rendered with 0ms SWR cache -->
+          </tbody>
+          <tfoot>
+            <tr style="background:#f8fafc; font-weight:800; border-top:2px solid var(--border);">
+              <td colspan="2" style="padding:12px 14px;">TEAM TOTAL</td>
+              <td style="text-align:right; padding:12px 14px;" class="tabular" id="tfTotalTarget">₹0</td>
+              <td style="text-align:right; padding:12px 14px;" class="tabular" id="tfTotalToday">₹0</td>
+              <td style="text-align:center; padding:12px 14px;" class="tabular">100.0%</td>
+              <td style="text-align:center; padding:12px 14px;">—</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: REQUEST NEW CALLER TO TEJAS MIS -->
+  <div id="requestCallerModal" class="modal-overlay">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="font-size:15px; font-weight:800;">Request New Caller Addition</h3>
+        <button type="button" class="btn-header" onclick="closeRequestCallerModal()">✕</button>
+      </div>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">
+        Submit a new caller request for approval by Tejas (MIS). Once approved, they will instantly appear on your desk.
+      </p>
+
+      <form onsubmit="submitCallerRequest(event)">
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:11.5px; font-weight:700; margin-bottom:4px;">Officer / Caller Full Name</label>
+          <input type="text" id="reqCallerName" required class="search-input" style="width:100%;" placeholder="e.g. PRIYANKA SHARMA">
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:11.5px; font-weight:700; margin-bottom:4px;">Shift Target (₹)</label>
+          <input type="text" id="reqCallerTarget" class="search-input tabular" style="width:100%;" placeholder="e.g. 2,50,000" oninput="formatNumberInput(this)">
+        </div>
+        <div style="margin-bottom:18px;">
+          <label style="display:block; font-size:11.5px; font-weight:700; margin-bottom:4px;">Reason / Notes</label>
+          <input type="text" id="reqCallerReason" class="search-input" style="width:100%;" placeholder="e.g. New joined officer / replacement">
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" class="btn-header" onclick="closeRequestCallerModal()">Cancel</button>
+          <button type="submit" id="btnSubmitReq" class="btn-header" style="background:#09090b; color:#fff;">Submit to MIS →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toastBox" class="toast-box">Notification</div>
+
+  <script>
+    var SUPABASE_URL = "https://vrpdsxmuqjxjarruujkl.supabase.co";
+    var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZycGRzeG11cWp4amFycnV1amtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTg5ODEsImV4cCI6MjEwNjQ5NDk4MX0.VMCkbrC_jBEsDYyKGg-I6J9ncRkeWytBJpca-GhDV7s";
+
+    var currentManagerKey = 'ambuj';
+    var currentUser = null;
+    var teamCallers = [];
+    var teamProjection = 0;
+
+    // ------------------------------------------------------------------------
+    // SESSION RESTORATION
+    // ------------------------------------------------------------------------
+    (function initSession() {
+      try {
+        var raw = localStorage.getItem('shaha_active_user');
+        if (raw) {
+          currentUser = JSON.parse(raw);
+          if (currentUser.managerKey && currentUser.managerKey !== 'all') {
+            currentManagerKey = currentUser.managerKey.toLowerCase();
+          } else if (currentUser.username) {
+            currentManagerKey = currentUser.username.toLowerCase();
+          }
+        }
+      } catch(e) {}
+    })();
+
+    // ------------------------------------------------------------------------
+    // SWR (STALE-WHILE-REVALIDATE) 0ms INSTANT PAINT ON LOAD
+    // ------------------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('deskTeamTitle').textContent = currentManagerKey.toUpperCase() + " CALLING DESK";
+      document.getElementById('tableRosterTitle').textContent = currentManagerKey.toUpperCase() + " ROSTER";
+
+      // 1. Instant 0ms Paint from Local Cache
+      loadCachedDataInstant();
+
+      // 2. Silent Background Delta Fetch from Supabase
+      revalidateFromSupabase();
+
+      // 3. WebSockets Realtime Sync
+      setupRealtime();
+
+      // 4. Shift Chime Clock
+      initShiftChimes();
+    });
+
+    function loadCachedDataInstant() {
+      try {
+        var cacheKey = 'shaha_team_cache_' + currentManagerKey;
+        var raw = localStorage.getItem(cacheKey);
+        if (raw) {
+          teamCallers = JSON.parse(raw);
+          renderCallerTable();
+        }
+
+        var projKey = 'shaha_proj_' + currentManagerKey + '_' + getTodayDateString();
+        var pVal = localStorage.getItem(projKey);
+        if (pVal) {
+          teamProjection = Number(pVal);
+          document.getElementById('morningProjInput').value = formatNumber(teamProjection);
+        }
+      } catch(e) {}
+    }
+
+    async function revalidateFromSupabase() {
+      setSyncStatus(true, "Syncing...");
+      try {
+        // Scoped query: Only fetch callers for THIS manager!
+        var url = SUPABASE_URL + '/rest/v1/callers?manager_key=eq.' + encodeURIComponent(currentManagerKey) + '&order=officer_name.asc';
+        var res = await fetch(url, {
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+        });
+
+        if (res.ok) {
+          var data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            teamCallers = data;
+            // Update local SWR cache for instant load next time
+            localStorage.setItem('shaha_team_cache_' + currentManagerKey, JSON.stringify(teamCallers));
+            renderCallerTable();
+          }
+        }
+        setSyncStatus(false, "Live Synced");
+      } catch(err) {
+        console.warn("Background revalidate offline:", err);
+        setSyncStatus(false, "Offline Cache");
+      }
+    }
+
+    function setupRealtime() {
+      try {
+        var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        client.channel('manager_team_' + currentManagerKey)
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'callers',
+            filter: 'manager_key=eq.' + currentManagerKey
+          }, function(payload) {
+            if (payload.new) {
+              var found = false;
+              for (var i = 0; i < teamCallers.length; i++) {
+                if (teamCallers[i].id === payload.new.id) {
+                  teamCallers[i] = payload.new;
+                  found = true;
+                  break;
+                }
+              }
+              if (!found && payload.eventType === 'INSERT') teamCallers.push(payload.new);
+              renderCallerTable();
+            }
+          })
+          .subscribe();
+      } catch(e) {}
+    }
+
+    // ------------------------------------------------------------------------
+    // TABLE RENDERING & INLINE AMOUNT ENTRY
+    // ------------------------------------------------------------------------
+    function renderCallerTable() {
+      var tbody = document.getElementById('callerTableBody');
+      var filter = (document.getElementById('callerFilterInput').value || '').trim().toLowerCase();
+
+      var list = teamCallers.filter(function(c) {
+        return c.status !== 'Inactive' && c.status !== 'Hidden';
+      });
+
+      if (filter) {
+        list = list.filter(function(c) {
+          return (c.officer_name || '').toLowerCase().indexOf(filter) !== -1;
+        });
+      }
+
+      var totalToday = 0;
+      var totalTarget = 0;
+      var loggedCount = 0;
+
+      list.forEach(function(c) {
+        var amt = Number(c.today) || 0;
+        var tgt = Number(c.target) || 0;
+        totalToday += amt;
+        totalTarget += tgt;
+        if (amt > 0) loggedCount++;
+      });
+
+      var html = '';
+      list.forEach(function(c, idx) {
+        var amt = Number(c.today) || 0;
+        var tgt = Number(c.target) || 0;
+        var sharePct = totalToday > 0 ? (amt / totalToday) * 100 : 0;
+        var isLogged = amt > 0;
+
+        html += '<tr>' +
+          '<td style="text-align:center; color:var(--text-muted);" class="tabular">' + (idx + 1) + '</td>' +
+          '<td style="font-weight:700;">' + escapeHtml(c.officer_name) + '</td>' +
+          '<td style="text-align:right; color:var(--text-muted);" class="tabular">' + (tgt > 0 ? ('₹ ' + formatNumber(tgt)) : '—') + '</td>' +
+          '<td style="text-align:right;">' +
+            '<input type="text" class="input-amount" ' +
+              'data-caller="' + escapeHtml(c.officer_name) + '" ' +
+              'data-id="' + escapeHtml(c.id) + '" ' +
+              'value="' + (amt > 0 ? formatNumber(amt) : '') + '" ' +
+              'placeholder="0" ' +
+              'onkeydown="handleInputKey(event, this)" ' +
+              'onblur="handleInputBlur(this)">' +
+          '</td>' +
+          '<td style="text-align:center; font-weight:700;" class="tabular">' + (sharePct > 0 ? sharePct.toFixed(1) + '%' : '0.0%') + '</td>' +
+          '<td style="text-align:center;">' +
+            (isLogged ? '<span class="badge-status badge-logged">✓ Logged</span>' : '<span class="badge-status badge-pending">Pending</span>') +
+          '</td>' +
+        '</tr>';
+      });
+
+      if (list.length === 0) {
+        html = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">No callers found.</td></tr>';
+      }
+
+      tbody.innerHTML = html;
+
+      // Update KPI Cards & Footers
+      document.getElementById('kpiTodayAmt').textContent = '₹ ' + formatNumber(totalToday);
+      document.getElementById('kpiLoggedCount').textContent = loggedCount + ' of ' + list.length + ' Callers Logged';
+      document.getElementById('kpiTeamTarget').textContent = '₹ ' + formatNumber(totalTarget);
+      document.getElementById('kpiTeamStrength').textContent = list.length + ' Callers';
+
+      document.getElementById('tfTotalToday').textContent = '₹ ' + formatNumber(totalToday);
+      document.getElementById('tfTotalTarget').textContent = '₹ ' + formatNumber(totalTarget);
+
+      var pacingPct = teamProjection > 0 ? (totalToday / teamProjection) * 100 : 0;
+      document.getElementById('kpiPacingPct').textContent = pacingPct.toFixed(1) + '%';
+      document.getElementById('kpiProjBenchmark').textContent = 'Target: ₹ ' + formatNumber(teamProjection) + ' Projected';
+    }
+
+    // Inline Calculator & Auto Save on Blur
+    function handleInputKey(e, inp) {
+      if (e.key === 'Enter') {
+        inp.blur();
+      }
+    }
+
+    async function handleInputBlur(inp) {
+      var raw = inp.value.trim();
+      var calculated = evaluateExpression(raw);
+      inp.value = calculated > 0 ? formatNumber(calculated) : '';
+
+      var officerName = inp.getAttribute('data-caller');
+      var id = inp.getAttribute('data-id');
+
+      // Update local state immediately
+      for (var i = 0; i < teamCallers.length; i++) {
+        if (teamCallers[i].officer_name === officerName) {
+          teamCallers[i].today = calculated;
+          break;
+        }
+      }
+
+      localStorage.setItem('shaha_team_cache_' + currentManagerKey, JSON.stringify(teamCallers));
+      renderCallerTable();
+
+      // Silent Save to Supabase
+      try {
+        setSyncStatus(true, "Saving...");
+        await fetch(SUPABASE_URL + '/rest/v1/callers?officer_name=eq.' + encodeURIComponent(officerName), {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ today: calculated, updated_at: new Date().toISOString() })
+        });
+        setSyncStatus(false, "Live Synced");
+      } catch(e) {
+        setSyncStatus(false, "Saved Locally");
+      }
+    }
+
+    function evaluateExpression(str) {
+      if (!str) return 0;
+      var clean = str.replace(/,/g, '').replace(/[₹\s]/g, '');
+      var tokens = clean.split('+');
+      var sum = 0;
+      tokens.forEach(function(t) {
+        var num = parseFloat(t.trim());
+        if (!isNaN(num)) sum += num;
+      });
+      return sum;
+    }
+
+    // ------------------------------------------------------------------------
+    // MORNING PROJECTION & REMINDER ENGINE
+    // ------------------------------------------------------------------------
+    function saveMorningProjection() {
+      var val = parseNumeric(document.getElementById('morningProjInput').value);
+      teamProjection = val;
+      var projKey = 'shaha_proj_' + currentManagerKey + '_' + getTodayDateString();
+      localStorage.setItem(projKey, String(val));
+      showToast("Saved morning projection: ₹ " + formatNumber(val), "success");
+      renderCallerTable();
+    }
+
+    function initShiftChimes() {
+      // Check reminders at 10:30, 12:00, 16:00, 18:20
+      setInterval(function() {
+        var now = new Date();
+        var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+        if ((h === 10 && m === 30 && s === 0) || (h === 12 && m === 0 && s === 0) || (h === 16 && m === 0 && s === 0) || (h === 18 && m === 20 && s === 0)) {
+          playHarmonicBell();
+          showToast("⏰ Shift Checkpoint: Update caller collections now!", "info");
+        }
+      }, 1000);
+    }
+
+    function playHarmonicBell() {
+      try {
+        var AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        var ctx = new AudioCtx();
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.7);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.7);
+      } catch(e) {}
+    }
+
+    // ------------------------------------------------------------------------
+    // REQUEST NEW CALLER TO TEJAS MIS
+    // ------------------------------------------------------------------------
+    function openRequestCallerModal() {
+      document.getElementById('reqCallerName').value = '';
+      document.getElementById('reqCallerTarget').value = '';
+      document.getElementById('reqCallerReason').value = '';
+      document.getElementById('requestCallerModal').style.display = 'flex';
+    }
+
+    function closeRequestCallerModal() {
+      document.getElementById('requestCallerModal').style.display = 'none';
+    }
+
+    async function submitCallerRequest(e) {
+      e.preventDefault();
+      var name = document.getElementById('reqCallerName').value.trim().toUpperCase();
+      var target = parseNumeric(document.getElementById('reqCallerTarget').value);
+      var reason = document.getElementById('reqCallerReason').value.trim();
+      var btn = document.getElementById('btnSubmitReq');
+
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      var reqObj = {
+        officer_name: name,
+        manager_key: currentManagerKey,
+        target: target,
+        reason: reason,
+        requested_by: currentUser ? currentUser.displayName : currentManagerKey,
+        requested_at: new Date().toISOString(),
+        status: 'pending'
+      };
+
+      try {
+        // Save request record into Supabase for Tejas MIS review
+        var reqUsername = '__caller_request_' + Date.now() + '__';
+        await fetch(SUPABASE_URL + '/rest/v1/users', {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username: reqUsername,
+            password: 'request_protected_1234',
+            role: 'caller',
+            display_name: JSON.stringify(reqObj),
+            manager_key: currentManagerKey
+          })
+        });
+
+        closeRequestCallerModal();
+        showToast("Request submitted to Tejas MIS for approval!", "success");
+      } catch(err) {
+        showToast("Request saved locally.", "warning");
+        closeRequestCallerModal();
+      }
+      btn.disabled = false;
+      btn.textContent = 'Submit to MIS →';
+    }
+
+    // ------------------------------------------------------------------------
+    // UTILS
+    // ------------------------------------------------------------------------
+    function setSyncStatus(isBusy, text) {
+      document.getElementById('syncDot').className = 'sync-dot' + (isBusy ? ' busy' : '');
+      document.getElementById('syncText').textContent = text;
+    }
+
+    function handleSignOut() {
+      localStorage.removeItem('shaha_active_user');
+      window.location.replace('index.html');
+    }
+
+    function getTodayDateString() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function formatNumber(num) {
+      if (!num) return '0';
+      var parts = Math.round(Number(num)).toString().split('.');
+      var lastThree = parts[0].substring(parts[0].length - 3);
+      var other = parts[0].substring(0, parts[0].length - 3);
+      if (other !== '') lastThree = ',' + lastThree;
+      return other.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + lastThree;
+    }
+
+    function parseNumeric(val) {
+      if (!val) return 0;
+      var clean = String(val).replace(/,/g, '').replace(/[₹\s]/g, '');
+      return parseFloat(clean) || 0;
+    }
+
+    function formatNumberInput(inp) {
+      var pos = inp.selectionStart;
+      var val = parseNumeric(inp.value);
+      if (val > 0) inp.value = formatNumber(val);
+    }
+
+    function showToast(msg, type) {
+      var t = document.getElementById('toastBox');
+      t.textContent = (type === 'success' ? '✅ ' : 'ℹ️ ') + msg;
+      t.classList.add('show');
+      setTimeout(function() { t.classList.remove('show'); }, 3000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

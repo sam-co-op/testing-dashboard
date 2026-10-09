@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Admin & MIS Floor Operations Desk — Shaha Finlease</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ==========================================================================
+       ADMIN & MIS OPERATIONS DESK (SATISH / TEJAS MIS)
+       Sub-30ms Instant SWR Load · Caller Approval Desk · Floor Rosters · Real-time
+       ========================================================================== */
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #09090b;
+      --text-muted: #64748b;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+      --primary: #09090b;
+      --accent: #2563eb;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); padding-bottom: 60px; }
+    .tabular { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+    /* Top Sticky Header */
+    .top-header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      background: #09090b;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    .brand-badge.mis {
+      background: #2563eb;
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #09090b;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-nav {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      transition: all 0.12s ease;
+    }
+
+    .btn-nav:hover { background: #f1f5f9; color: #09090b; }
+    .btn-nav.active { background: #09090b; color: #ffffff; border-color: #09090b; }
+
+    .btn-nav-primary {
+      background: #09090b;
+      color: #ffffff;
+      border-color: #09090b;
+    }
+    .btn-nav-primary:hover {
+      background: #27272a;
+      color: #ffffff;
+    }
+
+    .select-jump-mgr {
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #09090b;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #f8fafc;
+      outline: none;
+      cursor: pointer;
+    }
+    .select-jump-mgr:focus {
+      border-color: #09090b;
+    }
+
+    .sync-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+    }
+
+    .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: inline-block; }
+    .sync-dot.busy { background: #eab308; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .container { max-width: 1440px; margin: 16px auto 0; padding: 0 20px; }
+
+    /* Executive Hero KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .kpi-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      position: relative;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-top: 4px;
+      color: #09090b;
+    }
+
+    .kpi-sub {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .badge-alert {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .badge-alert.amber { background: #fef3c7; color: #b45309; }
+    .badge-alert.green { background: #dcfce7; color: #15803d; }
+    .badge-alert.red { background: #fee2e2; color: #b91c1c; }
+
+    /* View Controls Bar */
+    .controls-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .view-tabs-group {
+      display: inline-flex;
+      background: #e2e8f0;
+      padding: 2px;
+      border-radius: 6px;
+      gap: 2px;
+    }
+
+    .view-tab-btn {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: #475569;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.12s ease;
+    }
+
+    .view-tab-btn.active {
+      background: #ffffff;
+      color: #09090b;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+
+    .count-bubble {
+      background: #ef4444;
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .count-bubble.zero {
+      background: #cbd5e1;
+      color: #475569;
+    }
+
+    .search-box {
+      padding: 7px 12px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      outline: none;
+      width: 240px;
+      background: #ffffff;
+    }
+    .search-box:focus {
+      border-color: #09090b;
+    }
+
+    /* Main Table Card */
+    .table-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      margin-bottom: 20px;
+    }
+
+    .table-title-bar {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fafafa;
+    }
+
+    .table-card-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #09090b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: #f8fafc;
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .data-table tr.clickable-row {
+      cursor: pointer;
+      transition: background 0.1s ease;
+    }
+
+    .data-table tr.clickable-row:hover {
+      background: #fafafa;
+    }
+
+    .data-table tr.expanded-row {
+      background: #f4f4f5 !important;
+    }
+
+    .btn-toggle-callers {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #334155;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-toggle-callers:hover {
+      background: #09090b;
+      color: #ffffff;
+      border-color: #09090b;
+    }
+
+    /* Nested Accordion for Callers */
+    .nested-accordion-td {
+      padding: 12px 18px 18px !important;
+      background: #f8fafc;
+      border-bottom: 2px solid var(--border) !important;
+    }
+
+    .nested-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .nested-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #334155;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .nested-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .nested-table th {
+      background: #f1f5f9;
+      font-size: 10.5px;
+      padding: 8px 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .nested-table td {
+      padding: 8px 12px;
+      font-size: 12px;
+      border-bottom: 1px solid #f4f4f5;
+    }
+
+    .nested-table tr:hover {
+      background: #fafafa;
+    }
+
+    /* Action Buttons in Table */
+    .btn-sm-action {
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+    .btn-sm-action:hover {
+      background: #09090b;
+      color: #ffffff;
+    }
+
+    .btn-approve {
+      background: #16a34a;
+      color: #ffffff;
+      border: 1px solid #15803d;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.1s ease;
+    }
+    .btn-approve:hover { background: #15803d; }
+
+    .btn-reject {
+      background: #ffffff;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+    .btn-reject:hover { background: #fee2e2; }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      animation: modalSlide 0.15s ease-out;
+    }
+
+    @keyframes modalSlide {
+      from { transform: translateY(12px) scale(0.98); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .modal-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title { font-size: 14px; font-weight: 800; color: #09090b; }
+    .modal-close-btn { background: none; border: none; font-size: 18px; cursor: pointer; color: #64748b; }
+
+    .modal-body { padding: 18px; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 11.5px; font-weight: 700; color: #334155; margin-bottom: 4px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      outline: none;
+      background: #ffffff;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #09090b; }
+
+    .modal-footer {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border);
+      background: #f8fafc;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .btn-modal-cancel {
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-modal-submit {
+      padding: 7px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #ffffff;
+      background: #09090b;
+      border: 1px solid #09090b;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-modal-submit:hover { background: #27272a; }
+
+    /* Toast */
+    .toast-box {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #09090b;
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toast-box.show { transform: translateY(0); opacity: 1; }
+
+    .empty-state {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="top-header">
+    <div class="brand-group">
+      <span class="brand-badge mis" id="userRoleBadge">MIS DESK</span>
+      <h1 class="header-title" id="adminHeaderTitle">Floor Operations Control — Satish & Tejas</h1>
+      <div class="sync-pill">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncText">Live Synced</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Quick Switcher to Jump to Any Manager's Desk -->
+      <select class="select-jump-mgr" id="jumpToManagerSelect" onchange="jumpToSelectedManager(this.value)" title="Jump directly into any floor manager desk">
+        <option value="">👤 Jump to Manager Desk...</option>
+        <option value="ambuj">Ambuj Tripathi (Jogeshwari)</option>
+        <option value="poonam">Poonam Indulkar (Jogeshwari)</option>
+        <option value="omkar">Omkar Singh (Jogeshwari)</option>
+        <option value="smita">Smita (Dadar)</option>
+        <option value="aditi">Aditi (Dadar)</option>
+        <option value="shravanti">Shravanti (Dadar)</option>
+        <option value="shweta">Shweta (Dadar)</option>
+        <option value="customerservice">Customer Service</option>
+        <option value="saroj">Saroj</option>
+        <option value="satish">Satish P</option>
+      </select>
+
+      <button type="button" class="btn-nav btn-nav-primary" onclick="openAddCallerModal()">+ Add Caller</button>
+      <a href="leaderboard.html" class="btn-nav">🏆 Leaderboard</a>
+      <a href="viewer.html" class="btn-nav">👁 Viewer</a>
+      <a href="aod.html" target="_blank" class="btn-nav">📺 TV Display ↗</a>
+      <button type="button" class="btn-nav" onclick="handleSignOut()">Sign Out</button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Grand Operations KPI Grid -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Today's Grand Floor Recovery</div>
+        <div class="kpi-value tabular" id="kpiFloorToday">₹ 12,26,510</div>
+        <div class="kpi-sub" id="kpiFloorActive">Loading active callers...</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Total Floor Target</div>
+        <div class="kpi-value tabular" id="kpiFloorTarget">₹ 1,75,61,000</div>
+        <div class="kpi-sub">Monthly Operational Target</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Month-To-Date (MTD)</div>
+        <div class="kpi-value tabular" id="kpiFloorMtd">₹ 91,37,882</div>
+        <div class="kpi-sub" id="kpiFloorAchieved">59.0% Month Achieved</div>
+      </div>
+
+      <div class="kpi-card" style="border-left: 3px solid #2563eb;">
+        <div class="kpi-label">Pending Caller Requests</div>
+        <div class="kpi-value tabular" id="kpiPendingRequests">0</div>
+        <div class="kpi-sub" id="kpiPendingSub">From floor managers for MIS approval</div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs & Search Controls -->
+    <section class="controls-bar">
+      <div class="view-tabs-group">
+        <button type="button" class="view-tab-btn active" id="tabBtnRequests" onclick="switchView('requests')">
+          📋 Caller Requests <span class="count-bubble" id="tabReqBadge">0</span>
+        </button>
+        <button type="button" class="view-tab-btn" id="tabBtnManagers" onclick="switchView('managers')">
+          👥 Managers & Calling Rosters
+        </button>
+        <button type="button" class="view-tab-btn" id="tabBtnAllCallers" onclick="switchView('all_callers')">
+          📞 All Floor Callers
+        </button>
+        <button type="button" class="view-tab-btn" id="tabBtnBranches" onclick="switchView('branches')">
+          🏢 Branch Distribution
+        </button>
+      </div>
+
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <input type="text" id="adminSearchInput" class="search-box" placeholder="Search managers or callers..." oninput="handleSearch()">
+      </div>
+    </section>
+
+    <!-- Main Dynamic Data Card -->
+    <section class="table-card">
+      <div class="table-title-bar">
+        <div class="table-card-title" id="tableCardTitle">
+          📋 Floor Caller Requests (Tejas MIS Approvals Desk)
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-sm-action" onclick="refreshDataSilently()">🔄 Refresh</button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table" id="adminMainTable">
+          <thead id="adminTableThead">
+            <!-- Dynamic Thead -->
+          </thead>
+          <tbody id="adminTableTbody">
+            <!-- Dynamic Rows -->
+          </tbody>
+          <tfoot id="adminTableTfoot">
+            <!-- Dynamic Footers -->
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       MODAL 1: ADD CALLER DIRECTLY (ADMIN OVERRIDE)
+       ========================================================================= -->
+  <div id="addCallerModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">+ Add Caller Directly to Floor Roster</h2>
+        <button type="button" class="modal-close-btn" onclick="closeAddCallerModal()">✕</button>
+      </div>
+      <form onsubmit="handleDirectAddCaller(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Caller / Officer Full Name *</label>
+            <input type="text" id="addOfficerName" class="form-input" placeholder="e.g. RAHUL MEHRA" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Assign to Manager *</label>
+            <select id="addManagerKey" class="form-select" required>
+              <option value="ambuj">Ambuj Tripathi (Jogeshwari)</option>
+              <option value="poonam">Poonam Indulkar (Jogeshwari)</option>
+              <option value="omkar">Omkar Singh (Jogeshwari)</option>
+              <option value="smita">Smita (Dadar)</option>
+              <option value="aditi">Aditi (Dadar)</option>
+              <option value="shravanti">Shravanti (Dadar)</option>
+              <option value="shweta">Shweta (Dadar)</option>
+              <option value="customerservice">Customer Service</option>
+              <option value="saroj">Saroj</option>
+              <option value="satish">Satish P</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Monthly Recovery Target (₹) *</label>
+            <input type="text" id="addTargetAmt" class="form-input" placeholder="e.g. 2,50,000" onblur="formatNumberInput(this)" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Initial MTD / Prior Balance (₹)</label>
+            <input type="text" id="addMtdAmt" class="form-input" placeholder="0" onblur="formatNumberInput(this)">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-modal-cancel" onclick="closeAddCallerModal()">Cancel</button>
+          <button type="submit" class="btn-modal-submit" id="btnAddCallerSubmit">Save Caller →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 2: EDIT CALLER TARGET & DETAILS
+       ========================================================================= -->
+  <div id="editCallerModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">✏️ Edit Caller Details & Target</h2>
+        <button type="button" class="modal-close-btn" onclick="closeEditCallerModal()">✕</button>
+      </div>
+      <form onsubmit="handleSaveEditCaller(event)">
+        <input type="hidden" id="editCallerId">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Caller Name</label>
+            <input type="text" id="editOfficerName" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Manager</label>
+            <select id="editManagerKey" class="form-select" required>
+              <option value="ambuj">Ambuj Tripathi</option>
+              <option value="poonam">Poonam Indulkar</option>
+              <option value="omkar">Omkar Singh</option>
+              <option value="smita">Smita</option>
+              <option value="aditi">Aditi</option>
+              <option value="shravanti">Shravanti</option>
+              <option value="shweta">Shweta</option>
+              <option value="customerservice">Customer Service</option>
+              <option value="saroj">Saroj</option>
+              <option value="satish">Satish P</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Monthly Target (₹)</label>
+            <input type="text" id="editTargetAmt" class="form-input" onblur="formatNumberInput(this)" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select id="editStatus" class="form-select">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+              <option value="Hidden">Hidden</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-modal-cancel" onclick="closeEditCallerModal()">Cancel</button>
+          <button type="submit" class="btn-modal-submit">Save Changes →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastBox" class="toast-box">Notification</div>
+
+  <script>
+    var SUPABASE_URL = "https://vrpdsxmuqjxjarruujkl.supabase.co";
+    var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZycGRzeG11cWp4amFycnV1amtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTg5ODEsImV4cCI6MjEwNjQ5NDk4MX0.VMCkbrC_jBEsDYyKGg-I6J9ncRkeWytBJpca-GhDV7s";
+
+    // Canonical Manager Mappings
+    var MANAGER_NAMES = {
+      'ambuj': 'AMBUJ TRIPATHI',
+      'poonam': 'POONAM INDULKAR',
+      'omkar': 'OMKAR SINGH',
+      'smita': 'SMITA',
+      'aditi': 'ADITI',
+      'shravanti': 'SHRAVANTI',
+      'shweta': 'SHWETA',
+      'customerservice': 'CUSTOMER SERVICE',
+      'saroj': 'SAROJ',
+      'satish': 'SATISH P'
+    };
+
+    var MANAGER_BRANCHES = {
+      'ambuj': 'Jogeshwari',
+      'poonam': 'Jogeshwari',
+      'omkar': 'Jogeshwari',
+      'smita': 'Dadar',
+      'aditi': 'Dadar',
+      'shravanti': 'Dadar',
+      'shweta': 'Dadar',
+      'customerservice': 'Customer Service',
+      'saroj': 'Agencies / Saroj',
+      'satish': 'Head Office'
+    };
+
+    var ALL_MANAGERS_ORDER = [
+      'ambuj', 'poonam', 'omkar', 'smita', 'aditi', 'shravanti', 'shweta', 'customerservice', 'saroj', 'satish'
+    ];
+
+    // Default Seed Data
+    var DEFAULT_CALLERS = [
+      { id: 101, officer_name: "SAMEER KHAN", manager_key: "ambuj", target: 350000, yesterday: 45000, today: 32000, aoy: 280000, status: "Active" },
+      { id: 102, officer_name: "PRIYA SHARMA", manager_key: "ambuj", target: 300000, yesterday: 40000, today: 28500, aoy: 240000, status: "Active" },
+      { id: 103, officer_name: "RAHUL PATEL", manager_key: "ambuj", target: 280000, yesterday: 35000, today: 24000, aoy: 210000, status: "Active" },
+      { id: 104, officer_name: "VIKAS YADAV", manager_key: "ambuj", target: 250000, yesterday: 30000, today: 21000, aoy: 190000, status: "Active" },
+      { id: 105, officer_name: "AMIT VERMA", manager_key: "ambuj", target: 250000, yesterday: 28000, today: 19500, aoy: 175000, status: "Active" },
+      { id: 106, officer_name: "SNEHA DESHMUKH", manager_key: "poonam", target: 320000, yesterday: 38000, today: 31000, aoy: 260000, status: "Active" },
+      { id: 107, officer_name: "ANKIT JOSHI", manager_key: "poonam", target: 280000, yesterday: 32000, today: 26500, aoy: 220000, status: "Active" },
+      { id: 108, officer_name: "POOJA NAIR", manager_key: "poonam", target: 250000, yesterday: 29000, today: 22000, aoy: 195000, status: "Active" },
+      { id: 109, officer_name: "MANISH TIWARI", manager_key: "omkar", target: 300000, yesterday: 36000, today: 29000, aoy: 235000, status: "Active" },
+      { id: 110, officer_name: "DEEPAK GUPTA", manager_key: "omkar", target: 260000, yesterday: 30000, today: 23500, aoy: 195000, status: "Active" },
+      { id: 111, officer_name: "KAVITA SINGH", manager_key: "smita", target: 380000, yesterday: 48000, today: 41000, aoy: 310000, status: "Active" },
+      { id: 112, officer_name: "SURESH REDDY", manager_key: "smita", target: 340000, yesterday: 42000, today: 35000, aoy: 275000, status: "Active" },
+      { id: 113, officer_name: "ROHIT BANSAL", manager_key: "aditi", target: 290000, yesterday: 34000, today: 27000, aoy: 215000, status: "Active" },
+      { id: 114, officer_name: "NEHA CHAUHAN", manager_key: "shravanti", target: 310000, yesterday: 36000, today: 28000, aoy: 230000, status: "Active" },
+      { id: 115, officer_name: "ARUN KULKARNI", manager_key: "shweta", target: 270000, yesterday: 31000, today: 24000, aoy: 190000, status: "Active" },
+      { id: 116, officer_name: "SWAPNIL PATIL", manager_key: "customerservice", target: 250000, yesterday: 25000, today: 19010, aoy: 180000, status: "Active" }
+    ];
+
+    // Global State
+    var currentUser = null;
+    var currentView = 'requests'; // 'requests' | 'managers' | 'all_callers' | 'branches'
+    var allCallers = [];
+    var callerRequests = [];
+    var expandedManagerAccordions = {};
+
+    // ------------------------------------------------------------------------
+    // SESSION RESTORATION & AUTH CHECK
+    // ------------------------------------------------------------------------
+    (function initSession() {
+      try {
+        var raw = localStorage.getItem('shaha_active_user');
+        if (raw) {
+          currentUser = JSON.parse(raw);
+          if (currentUser.displayName) {
+            document.getElementById('adminHeaderTitle').textContent = "Operations Control — " + currentUser.displayName;
+          }
+          if (currentUser.role === 'admin') {
+            var b = document.getElementById('userRoleBadge');
+            b.textContent = 'ADMIN DESK';
+            b.style.background = '#09090b';
+          }
+        }
+      } catch(e) {}
+    })();
+
+    // ------------------------------------------------------------------------
+    // SWR (STALE-WHILE-REVALIDATE) 0ms INSTANT PAINT ON LOAD
+    // ------------------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', function() {
+      // 1. Instant Paint from Local Storage Cache
+      loadCachedDataInstant();
+
+      // 2. Silent Background Delta Revalidation
+      refreshDataSilently();
+
+      // 3. Supabase Realtime Channels
+      setupRealtime();
+    });
+
+    function loadCachedDataInstant() {
+      try {
+        var cachedCallers = localStorage.getItem('shaha_admin_callers_cache');
+        if (cachedCallers) {
+          allCallers = JSON.parse(cachedCallers);
+        } else {
+          allCallers = DEFAULT_CALLERS.slice();
+        }
+
+        var cachedReqs = localStorage.getItem('shaha_admin_requests_cache');
+        if (cachedReqs) {
+          callerRequests = JSON.parse(cachedReqs);
+        }
+
+        renderCurrentView();
+        updatePendingCounters();
+      } catch(e) {
+        allCallers = DEFAULT_CALLERS.slice();
+        renderCurrentView();
+      }
+    }
+
+    async function refreshDataSilently() {
+      setSyncStatus(true, "Syncing...");
+      try {
+        // Fetch 1: All Callers
+        var cRes = await fetch(SUPABASE_URL + '/rest/v1/callers?order=manager_key.asc,officer_name.asc', {
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+        });
+
+        if (cRes.ok) {
+          var cData = await cRes.json();
+          if (Array.isArray(cData) && cData.length > 0) {
+            allCallers = cData;
+            localStorage.setItem('shaha_admin_callers_cache', JSON.stringify(allCallers));
+          }
+        }
+
+        // Fetch 2: Caller Requests from Users Table
+        var rRes = await fetch(SUPABASE_URL + '/rest/v1/users?username=like.__caller_request_%&order=id.desc', {
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+        });
+
+        if (rRes.ok) {
+          var rData = await rRes.json();
+          var parsedReqs = [];
+          if (Array.isArray(rData)) {
+            rData.forEach(function(item) {
+              try {
+                var p = JSON.parse(item.display_name);
+                p._recordId = item.id;
+                p._rawUsername = item.username;
+                parsedReqs.push(p);
+              } catch(e) {}
+            });
+          }
+          callerRequests = parsedReqs;
+          localStorage.setItem('shaha_admin_requests_cache', JSON.stringify(callerRequests));
+        }
+
+        setSyncStatus(false, "Live Synced");
+      } catch(err) {
+        console.warn("Background revalidate fallback:", err);
+        setSyncStatus(false, "Offline Cache");
+      }
+
+      renderCurrentView();
+      updatePendingCounters();
+    }
+
+    function setupRealtime() {
+      try {
+        var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Listen for Caller updates
+        client.channel('admin_callers_channel')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'callers' }, function(payload) {
+            refreshDataSilently();
+          })
+          .subscribe();
+
+        // Listen for new Manager Requests in users table
+        client.channel('admin_requests_channel')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, function(payload) {
+            refreshDataSilently();
+          })
+          .subscribe();
+      } catch(e) {}
+    }
+
+    function updatePendingCounters() {
+      var pendingCount = callerRequests.filter(function(r) { return r.status === 'pending'; }).length;
+      var elKpi = document.getElementById('kpiPendingRequests');
+      var elBadge = document.getElementById('tabReqBadge');
+      var elSub = document.getElementById('kpiPendingSub');
+
+      if (elKpi) elKpi.textContent = pendingCount;
+      if (elBadge) {
+        elBadge.textContent = pendingCount;
+        elBadge.className = 'count-bubble' + (pendingCount === 0 ? ' zero' : '');
+      }
+      if (elSub) {
+        elSub.textContent = pendingCount === 0 ? 'All requests processed' : (pendingCount + ' awaiting Tejas MIS approval');
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // VIEW SWITCHER
+    // ------------------------------------------------------------------------
+    function switchView(mode) {
+      currentView = mode;
+      document.getElementById('tabBtnRequests').classList.toggle('active', mode === 'requests');
+      document.getElementById('tabBtnManagers').classList.toggle('active', mode === 'managers');
+      document.getElementById('tabBtnAllCallers').classList.toggle('active', mode === 'all_callers');
+      document.getElementById('tabBtnBranches').classList.toggle('active', mode === 'branches');
+
+      var titleEl = document.getElementById('tableCardTitle');
+      if (mode === 'requests') {
+        titleEl.textContent = '📋 Floor Caller Requests (Tejas MIS Approvals Desk)';
+      } else if (mode === 'managers') {
+        titleEl.textContent = '👥 Floor Managers & Calling Rosters (Click to expand Callers)';
+      } else if (mode === 'all_callers') {
+        titleEl.textContent = '📞 Complete Floor Callers Directory (Target & Roster Status)';
+      } else {
+        titleEl.textContent = '🏢 Branch-Wise Recovery & Target Distribution';
+      }
+
+      renderCurrentView();
+    }
+
+    function handleSearch() {
+      renderCurrentView();
+    }
+
+    function renderCurrentView() {
+      var thead = document.getElementById('adminTableThead');
+      var tbody = document.getElementById('adminTableTbody');
+      var tfoot = document.getElementById('adminTableTfoot');
+      var search = (document.getElementById('adminSearchInput').value || '').trim().toLowerCase();
+
+      if (currentView === 'requests') {
+        renderRequestsTable(thead, tbody, tfoot, search);
+      } else if (currentView === 'managers') {
+        renderManagersTable(thead, tbody, tfoot, search);
+      } else if (currentView === 'all_callers') {
+        renderAllCallersTable(thead, tbody, tfoot, search);
+      } else {
+        renderBranchesTable(thead, tbody, tfoot, search);
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // VIEW 1: CALLER REQUEST APPROVALS (TEJAS MIS DESK)
+    // ------------------------------------------------------------------------
+    function renderRequestsTable(thead, tbody, tfoot, search) {
+      tfoot.innerHTML = '';
+      thead.innerHTML = '<tr>' +
+        '<th style="width:40px; text-align:center;">#</th>' +
+        '<th>REQUESTED OFFICER</th>' +
+        '<th>MANAGER / TEAM</th>' +
+        '<th style="text-align:right; width:130px;">ASSIGNED TARGET</th>' +
+        '<th>REASON / NOTES</th>' +
+        '<th>REQUESTED AT</th>' +
+        '<th style="text-align:center; width:100px;">STATUS</th>' +
+        '<th style="text-align:center; width:140px;">ACTIONS</th>' +
+      '</tr>';
+
+      var list = callerRequests.slice();
+
+      if (search) {
+        list = list.filter(function(r) {
+          return (r.officer_name || '').toLowerCase().indexOf(search) !== -1 ||
+                 (r.manager_key || '').toLowerCase().indexOf(search) !== -1 ||
+                 (r.reason || '').toLowerCase().indexOf(search) !== -1;
+        });
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No caller requests pending at this time. Floor managers can submit requests via their Manager Desk.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      list.forEach(function(r, idx) {
+        var mgrName = MANAGER_NAMES[r.manager_key] || (r.manager_key || '').toUpperCase();
+        var dateFormatted = r.requested_at ? new Date(r.requested_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
+
+        var statusBadge = '';
+        if (r.status === 'approved') {
+          statusBadge = '<span class="badge-alert green">Approved</span>';
+        } else if (r.status === 'rejected') {
+          statusBadge = '<span class="badge-alert red">Rejected</span>';
+        } else {
+          statusBadge = '<span class="badge-alert amber">Pending</span>';
+        }
+
+        var actions = '';
+        if (r.status === 'pending') {
+          actions = '<div style="display:flex; gap:6px; justify-content:center;">' +
+            '<button type="button" class="btn-approve" onclick="approveCallerRequest(' + idx + ')">Approve ✓</button>' +
+            '<button type="button" class="btn-reject" onclick="rejectCallerRequest(' + idx + ')">Reject ✕</button>' +
+          '</div>';
+        } else {
+          actions = '<span style="color:var(--text-muted); font-size:11px;">Processed</span>';
+        }
+
+        html += '<tr>' +
+          '<td style="text-align:center; font-weight:700;" class="tabular">' + (idx + 1) + '</td>' +
+          '<td style="font-weight:800; color:#09090b;">' + escapeHtml(r.officer_name) + '</td>' +
+          '<td>' +
+            '<span style="font-weight:700;">' + escapeHtml(mgrName) + '</span>' +
+            '<span style="font-size:11px; color:var(--text-muted); display:block;">By: ' + escapeHtml(r.requested_by || 'Manager') + '</span>' +
+          '</td>' +
+          '<td style="text-align:right; font-weight:700;" class="tabular">₹ ' + formatNumber(r.target) + '</td>' +
+          '<td style="color:#475569; font-size:12px; max-width:240px; white-space:normal;">' + escapeHtml(r.reason || 'Floor expansion') + '</td>' +
+          '<td style="font-size:11.5px; color:var(--text-muted);">' + dateFormatted + '</td>' +
+          '<td style="text-align:center;">' + statusBadge + '</td>' +
+          '<td style="text-align:center;">' + actions + '</td>' +
+        '</tr>';
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    // Approve Caller Request
+    async function approveCallerRequest(idx) {
+      var req = callerRequests[idx];
+      if (!req) return;
+
+      if (!confirm("Approve and add '" + req.officer_name + "' to " + (MANAGER_NAMES[req.manager_key] || req.manager_key) + "'s calling roster?")) {
+        return;
+      }
+
+      setSyncStatus(true, "Approving...");
+
+      try {
+        // 1. Insert new caller record into callers table
+        var newCallerRecord = {
+          officer_name: req.officer_name,
+          manager_key: req.manager_key,
+          target: Number(req.target) || 0,
+          today: 0,
+          aoy: 0,
+          yesterday: 0,
+          status: 'Active'
+        };
+
+        var postRes = await fetch(SUPABASE_URL + '/rest/v1/callers', {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(newCallerRecord)
+        });
+
+        if (postRes.ok) {
+          var inserted = await postRes.json();
+          if (Array.isArray(inserted) && inserted.length > 0) {
+            allCallers.push(inserted[0]);
+          } else {
+            allCallers.push(newCallerRecord);
+          }
+        } else {
+          allCallers.push(newCallerRecord);
+        }
+
+        // 2. Update request status to 'approved' in Supabase users table
+        req.status = 'approved';
+        req.approved_at = new Date().toISOString();
+        req.approved_by = currentUser ? currentUser.displayName : 'Tejas (MIS)';
+
+        if (req._recordId) {
+          await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + req._recordId, {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              display_name: JSON.stringify(req)
+            })
+          });
+        }
+
+        // Update local caches
+        localStorage.setItem('shaha_admin_callers_cache', JSON.stringify(allCallers));
+        localStorage.setItem('shaha_admin_requests_cache', JSON.stringify(callerRequests));
+
+        showToast("Approved! " + req.officer_name + " added to floor roster.", "success");
+        setSyncStatus(false, "Live Synced");
+      } catch(err) {
+        console.error("Approve request error:", err);
+        req.status = 'approved';
+        showToast("Approved locally.", "info");
+        setSyncStatus(false, "Offline");
+      }
+
+      renderCurrentView();
+      updatePendingCounters();
+    }
+
+    // Reject Caller Request
+    async function rejectCallerRequest(idx) {
+      var req = callerRequests[idx];
+      if (!req) return;
+
+      var reason = prompt("Enter reason for rejection (optional):", "Target reallocation needed");
+      if (reason === null) return; // user cancelled
+
+      setSyncStatus(true, "Updating...");
+
+      req.status = 'rejected';
+      req.rejected_at = new Date().toISOString();
+      req.rejection_reason = reason;
+
+      try {
+        if (req._recordId) {
+          await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + req._recordId, {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              display_name: JSON.stringify(req)
+            })
+          });
+        }
+        localStorage.setItem('shaha_admin_requests_cache', JSON.stringify(callerRequests));
+        showToast("Request rejected.", "warning");
+        setSyncStatus(false, "Live Synced");
+      } catch(err) {
+        showToast("Updated locally.", "warning");
+        setSyncStatus(false, "Offline");
+      }
+
+      renderCurrentView();
+      updatePendingCounters();
+    }
+
+    // ------------------------------------------------------------------------
+    // VIEW 2: MANAGERS & CALLERS ACCORDION (EXPANDABLE DROPDOWNS)
+    // ------------------------------------------------------------------------
+    function renderManagersTable(thead, tbody, tfoot, search) {
+      thead.innerHTML = '<tr>' +
+        '<th style="width:40px; text-align:center;">#</th>' +
+        '<th>MANAGER NAME</th>' +
+        '<th>BRANCH</th>' +
+        '<th style="text-align:center; width:120px;">TEAM ROSTER</th>' +
+        '<th style="text-align:right; width:130px;">MONTH TARGET (₹)</th>' +
+        '<th style="text-align:right; width:130px;">MTD RECOVERY (₹)</th>' +
+        '<th style="text-align:right; width:140px;">TODAY FLOOR (₹)</th>' +
+        '<th style="text-align:center; width:100px;">ACHIEVED %</th>' +
+        '<th style="text-align:center; width:110px;">ACTIONS</th>' +
+      '</tr>';
+
+      // Group callers by manager
+      var mgrGroups = {};
+      ALL_MANAGERS_ORDER.forEach(function(mk) { mgrGroups[mk] = []; });
+      allCallers.forEach(function(c) {
+        var mk = (c.manager_key || '').toLowerCase();
+        if (!mgrGroups[mk]) mgrGroups[mk] = [];
+        mgrGroups[mk].push(c);
+      });
+
+      var rows = [];
+      var grandToday = 0, grandTarget = 0, grandMtd = 0, grandCallers = 0;
+
+      ALL_MANAGERS_ORDER.forEach(function(mk) {
+        var title = MANAGER_NAMES[mk] || mk.toUpperCase();
+        var branch = MANAGER_BRANCHES[mk] || 'Floor';
+        var cList = mgrGroups[mk] || [];
+
+        if (search) {
+          var matchTitle = title.toLowerCase().indexOf(search) !== -1;
+          var matchBranch = branch.toLowerCase().indexOf(search) !== -1;
+          var matchCaller = cList.some(function(c) { return (c.officer_name || '').toLowerCase().indexOf(search) !== -1; });
+          if (!matchTitle && !matchBranch && !matchCaller) return;
+        }
+
+        var todaySum = 0, targetSum = 0, mtdSum = 0;
+        cList.forEach(function(c) {
+          if (c.status !== 'Inactive' && c.status !== 'Hidden') {
+            todaySum += Number(c.today) || 0;
+            targetSum += Number(c.target) || 0;
+            mtdSum += Number(c.aoy) || 0;
+          }
+        });
+
+        grandToday += todaySum;
+        grandTarget += targetSum;
+        grandMtd += mtdSum;
+        grandCallers += cList.length;
+
+        var ach = targetSum > 0 ? (mtdSum / targetSum) * 100 : 0;
+
+        rows.push({
+          key: mk,
+          title: title,
+          branch: branch,
+          callers: cList,
+          today: todaySum,
+          target: targetSum,
+          mtd: mtdSum,
+          ach: ach
+        });
+      });
+
+      rows.sort(function(a, b) { return b.today - a.today; });
+
+      var html = '';
+      rows.forEach(function(m, idx) {
+        var isExpanded = !!expandedManagerAccordions[m.key];
+        var chevron = isExpanded ? '▲' : '▼';
+
+        html += '<tr class="clickable-row' + (isExpanded ? ' expanded-row' : '') + '" onclick="toggleManagerAccordion(\'' + m.key + '\')">' +
+          '<td style="text-align:center; font-weight:700;" class="tabular">' + (idx + 1) + '</td>' +
+          '<td style="font-weight:800; color:#09090b;">' +
+            '<span style="display:inline-block; width:14px; color:var(--text-muted); font-size:10px;">' + chevron + '</span> ' +
+            escapeHtml(m.title) +
+          '</td>' +
+          '<td style="color:#64748b; font-size:12px;">' + escapeHtml(m.branch) + '</td>' +
+          '<td style="text-align:center;" class="tabular">' +
+            '<button type="button" class="btn-toggle-callers" onclick="event.stopPropagation(); toggleManagerAccordion(\'' + m.key + '\')">' +
+              (isExpanded ? '▲ Hide' : '▼ View (' + m.callers.length + ')') +
+            '</button>' +
+          '</td>' +
+          '<td style="text-align:right; font-weight:700;" class="tabular">₹ ' + formatNumber(m.target) + '</td>' +
+          '<td style="text-align:right; font-weight:700;" class="tabular">₹ ' + formatNumber(m.mtd) + '</td>' +
+          '<td style="text-align:right; font-weight:800;" class="tabular">₹ ' + formatNumber(m.today) + '</td>' +
+          '<td style="text-align:center;" class="tabular"><span style="background:#f1f5f9; padding:2px 7px; border-radius:4px; font-weight:800;">' + m.ach.toFixed(1) + '%</span></td>' +
+          '<td style="text-align:center;">' +
+            '<button type="button" class="btn-sm-action" onclick="event.stopPropagation(); jumpToSelectedManager(\'' + m.key + '\')" title="Open manager desk in new tab">🚀 Jump Desk</button>' +
+          '</td>' +
+        '</tr>';
+
+        if (isExpanded) {
+          html += renderNestedCallersTable(m);
+        }
+      });
+
+      tbody.innerHTML = html;
+
+      // Update KPI Cards
+      document.getElementById('kpiFloorToday').textContent = '₹ ' + formatNumber(grandToday);
+      document.getElementById('kpiFloorTarget').textContent = '₹ ' + formatNumber(grandTarget);
+      document.getElementById('kpiFloorMtd').textContent = '₹ ' + formatNumber(grandMtd);
+      document.getElementById('kpiFloorActive').textContent = grandCallers + ' Active Officers Across 10 Teams';
+      var grandAch = grandTarget > 0 ? (grandMtd / grandTarget) * 100 : 0;
+      document.getElementById('kpiFloorAchieved').textContent = grandAch.toFixed(1) + '% Month Achieved';
+
+      // Footers
+      tfoot.innerHTML = '<tr style="background:#f8fafc; font-weight:800; border-top:2px solid var(--border);">' +
+        '<td colspan="3" style="padding:12px 14px;">GRAND FLOOR TOTAL</td>' +
+        '<td style="text-align:center;" class="tabular">' + grandCallers + ' Callers</td>' +
+        '<td style="text-align:right;" class="tabular">₹ ' + formatNumber(grandTarget) + '</td>' +
+        '<td style="text-align:right;" class="tabular">₹ ' + formatNumber(grandMtd) + '</td>' +
+        '<td style="text-align:right; font-size:14px;" class="tabular">₹ ' + formatNumber(grandToday) + '</td>' +
+        '<td style="text-align:center;" class="tabular">' + grandAch.toFixed(1) + '%</td>' +
+        '<td></td>' +
+      '</tr>';
+    }
+
+    function toggleManagerAccordion(mgrKey) {
+      expandedManagerAccordions[mgrKey] = !expandedManagerAccordions[mgrKey];
+      renderCurrentView();
+    }
+
+    function renderNestedCallersTable(mgr) {
+      var callers = mgr.callers || [];
+      var rowsHtml = '';
+
+      if (callers.length === 0) {
+        rowsHtml = '<tr><td colspan="7" style="text-align:center; padding:16px; color:var(--text-muted);">No callers assigned to this manager yet. Click "+ Add Caller" above to assign one.</td></tr>';
+      } else {
+        callers.forEach(function(c, idx) {
+          var amt = Number(c.today) || 0;
+          var tgt = Number(c.target) || 0;
+          var mtd = Number(c.aoy) || 0;
+          var status = c.status || 'Active';
+
+          rowsHtml += '<tr>' +
+            '<td style="text-align:center; width:36px; color:var(--text-muted);">' + (idx + 1) + '</td>' +
+            '<td style="font-weight:700;">' + escapeHtml(c.officer_name) + '</td>' +
+            '<td style="text-align:right;" class="tabular">₹ ' + formatNumber(tgt) + '</td>' +
+            '<td style="text-align:right;" class="tabular">₹ ' + formatNumber(mtd) + '</td>' +
+            '<td style="text-align:right; font-weight:800;" class="tabular">₹ ' + formatNumber(amt) + '</td>' +
+            '<td style="text-align:center;"><span class="badge-alert ' + (status === 'Active' ? 'green' : 'amber') + '">' + status + '</span></td>' +
+            '<td style="text-align:center;">' +
+              '<button type="button" class="btn-sm-action" onclick="openEditCallerModal(' + c.id + ')">Edit ✏️</button>' +
+            '</td>' +
+          '</tr>';
+        });
+      }
+
+      return '<tr class="expanded-row">' +
+        '<td colspan="9" class="nested-accordion-td">' +
+          '<div class="nested-header-bar">' +
+            '<div class="nested-title">Calling Roster for ' + escapeHtml(mgr.title) + ' (' + callers.length + ' Officers)</div>' +
+            '<button type="button" class="btn-sm-action" onclick="openAddCallerForManagerModal(\'' + mgr.key + '\')">+ Add Caller to ' + escapeHtml(mgr.title) + '</button>' +
+          '</div>' +
+          '<table class="nested-table">' +
+            '<thead>' +
+              '<tr>' +
+                '<th style="width:36px; text-align:center;">#</th>' +
+                '<th>OFFICER NAME</th>' +
+                '<th style="text-align:right; width:130px;">TARGET (₹)</th>' +
+                '<th style="text-align:right; width:130px;">MTD (₹)</th>' +
+                '<th style="text-align:right; width:140px;">TODAY (₹)</th>' +
+                '<th style="text-align:center; width:90px;">STATUS</th>' +
+                '<th style="text-align:center; width:90px;">ACTIONS</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>' + rowsHtml + '</tbody>' +
+          '</table>' +
+        '</td>' +
+      '</tr>';
+    }
+
+    // ------------------------------------------------------------------------
+    // VIEW 3: ALL FLOOR CALLERS DIRECTORY
+    // ------------------------------------------------------------------------
+    function renderAllCallersTable(thead, tbody, tfoot, search) {
+      thead.innerHTML = '<tr>' +
+        '<th style="width:40px; text-align:center;">#</th>' +
+        '<th>OFFICER NAME</th>' +
+        '<th>MANAGER / DESK</th>' +
+        '<th>BRANCH</th>' +
+        '<th style="text-align:right; width:130px;">MONTH TARGET (₹)</th>' +
+        '<th style="text-align:right; width:130px;">MTD RECOVERY (₹)</th>' +
+        '<th style="text-align:right; width:140px;">TODAY COLLECTION (₹)</th>' +
+        '<th style="text-align:center; width:90px;">STATUS</th>' +
+        '<th style="text-align:center; width:90px;">ACTIONS</th>' +
+      '</tr>';
+
+      var list = allCallers.slice();
+
+      if (search) {
+        list = list.filter(function(c) {
+          var mgrName = MANAGER_NAMES[c.manager_key] || c.manager_key || '';
+          return (c.officer_name || '').toLowerCase().indexOf(search) !== -1 ||
+                 mgrName.toLowerCase().indexOf(search) !== -1;
+        });
+      }
+
+      list.sort(function(a, b) { return (Number(b.today) || 0) - (Number(a.today) || 0); });
+
+      var grandTgt = 0, grandMtd = 0, grandToday = 0;
+      var html = '';
+
+      list.forEach(function(c, idx) {
+        var tgt = Number(c.target) || 0;
+        var mtd = Number(c.aoy) || 0;
+        var amt = Number(c.today) || 0;
+        var status = c.status || 'Active';
+        var mgrName = MANAGER_NAMES[c.manager_key] || (c.manager_key || '').toUpperCase();
+        var branch = MANAGER_BRANCHES[c.manager_key] || 'Floor';
+
+        grandTgt += tgt;
+        grandMtd += mtd;
+        grandToday += amt;
+
+        html += '<tr>' +
+          '<td style="text-align:center; font-weight:700;" class="tabular">' + (idx + 1) + '</td>' +
+          '<td style="font-weight:800; color:#09090b;">' + escapeHtml(c.officer_name) + '</td>' +
+          '<td style="font-weight:700;">' + escapeHtml(mgrName) + '</td>' +
+          '<td style="color:#64748b; font-size:12px;">' + escapeHtml(branch) + '</td>' +
+          '<td style="text-align:right;" class="tabular">₹ ' + formatNumber(tgt) + '</td>' +
+          '<td style="text-align:right;" class="tabular">₹ ' + formatNumber(mtd) + '</td>' +
+          '<td style="text-align:right; font-weight:800;" class="tabular">₹ ' + formatNumber(amt) + '</td>' +
+          '<td style="text-align:center;"><span class="badge-alert ' + (status === 'Active' ? 'green' : 'amber') + '">' + status + '</span></td>' +
+          '<td style="text-align:center;"><button type="button" class="btn-sm-action" onclick="openEditCallerModal(' + c.id + ')">Edit ✏️</button></td>' +
+        '</tr>';
+      });
+
+      tbody.innerHTML = html || '<tr><td colspan="9" class="empty-state">No matching callers found.</td></tr>';
+
+      tfoot.innerHTML = '<tr style="background:#f8fafc; font-weight:800; border-top:2px solid var(--border);">' +
+        '<td colspan="4" style="padding:12px 14px;">TOTAL (' + list.length + ' Callers)</td>' +
+        '<td style="text-align:right;" class="tabular">₹ ' + formatNumber(grandTgt) + '</td>' +
+        '<td style="text-align:right;" class="tabular">₹ ' + formatNumber(grandMtd) + '</td>' +
+        '<td style="text-align:right; font-size:14px;" class="tabular">₹ ' + formatNumber(grandToday) + '</td>' +
+        '<td colspan="2"></td>' +
+      '</tr>';
+    }
+
+    // ------------------------------------------------------------------------
+    // VIEW 4: BRANCH DISTRIBUTION
+    // ------------------------------------------------------------------------
+    function renderBranchesTable(thead, tbody, tfoot, search) {
+      thead.innerHTML = '<tr>' +
+        '<th style="width:40px; text-align:center;">#</th>' +
+        '<th>BRANCH NAME</th>' +
+        '<th>ASSOCIATED MANAGERS</th>' +
+        '<th style="text-align:center; width:120px;">CALLER COUNT</th>' +
+        '<th style="text-align:right; width:140px;">BRANCH TARGET (₹)</th>' +
+        '<th style="text-align:right; width:140px;">MTD RECOVERY (₹)</th>' +
+        '<th style="text-align:right; width:150px;">TODAY RECOVERY (₹)</th>' +
+        '<th style="text-align:center; width:100px;">ACHIEVED %</th>' +
+      '</tr>';
+
+      var branchGroups = {
+        'Jogeshwari': { title: 'Jogeshwari Branch', mgrs: ['ambuj', 'poonam', 'omkar'], callers: 0, target: 0, mtd: 0, today: 0 },
+        'Dadar': { title: 'Dadar Branch', mgrs: ['smita', 'aditi', 'shravanti', 'shweta'], callers: 0, target: 0, mtd: 0, today: 0 },
+        'Customer Service': { title: 'Customer Service Desk', mgrs: ['customerservice'], callers: 0, target: 0, mtd: 0, today: 0 },
+        'Agencies': { title: 'Agencies & Field (Saroj)', mgrs: ['saroj'], callers: 0, target: 0, mtd: 0, today: 0 }
+      };
+
+      allCallers.forEach(function(c) {
+        var mk = (c.manager_key || '').toLowerCase();
+        var bKey = MANAGER_BRANCHES[mk] || 'Jogeshwari';
+        if (bKey.indexOf('Jogeshwari') !== -1) bKey = 'Jogeshwari';
+        else if (bKey.indexOf('Dadar') !== -1) bKey = 'Dadar';
+        else if (bKey.indexOf('Customer') !== -1) bKey = 'Customer Service';
+        else bKey = 'Agencies';
+
+        if (branchGroups[bKey] && c.status !== 'Inactive' && c.status !== 'Hidden') {
+          branchGroups[bKey].callers++;
+          branchGroups[bKey].target += Number(c.target) || 0;
+          branchGroups[bKey].mtd += Number(c.aoy) || 0;
+          branchGroups[bKey].today += Number(c.today) || 0;
+        }
+      });
+
+      var rows = Object.values(branchGroups);
+      var grandTgt = 0, grandMtd = 0, grandToday = 0, grandCallers = 0;
+      var html = '';
+
+      rows.forEach(function(b, idx) {
+        grandTgt += b.target;
+        grandMtd += b.mtd;
+        grandToday += b.today;
+        grandCallers += b.callers;
+
+        var ach = b.target > 0 ? (b.mtd / b.target) * 100 : 0;
+        var mgrBadges = b.mgrs.map(function(k) { return MANAGER_NAMES[k] || k.toUpperCase(); }).join(', ');
+
+        html += '<tr>' +
+          '<td style="text-align:center; font-weight:700;" class="tabular">' + (idx + 1) + '</td>' +
+          '<td style="font-weight:800; color:#09090b;">' + escapeHtml(b.title) + '</td>' +
+          '<td style="font-size:12px; color:#475569;">' + escapeHtml(mgrBadges) + '</td>' +
+          '<td style="text-align:center;" class="tabular">' + b.callers + ' Callers</td>' +
+          '<td style="text-align:right; font-weight:700;" class="tabular">₹ ' + formatNumber(b.target) + '</td>' +
+          '<td style="text-align:right; font-weight:700;" class="tabular">₹ ' + formatNumber(b.mtd) + '</td>' +
+          '<td style="text-align:right; font-weight:800;" class="tabular">₹ ' + formatNumber(b.today) + '</td>' +
+          '<td style="text-align:center;" class="tabular"><span style="background:#f1f5f9; padding:2px 7px; border-radius:4px; font-weight:800;">' + ach.toFixed(1) + '%</span></td>' +
+        '</tr>';
+      });
+
+      tbody.innerHTML = html;
+
+      var grandAch = grandTgt > 0 ? (grandMtd / grandTgt) * 100 : 0;
+      tfoot.innerHTML = '<tr style="background:#f8fafc; font-weight:800; border-top:2px solid var(--border);">' +
+        '<td colspan="3" style="padding:12px 14px;">FLOOR TOTAL</td>' +
+        '<td style="text-align:center;" class="tabular">' + grandCallers + ' Callers</td>' +
+        '<td style="text-align:right;" class="tabular">₹ ' + formatNumber(grandTgt) + '</td>' +
+        '<td style="text-align:right;" class="tabular">₹ ' + formatNumber(grandMtd) + '</td>' +
+        '<td style="text-align:right; font-size:14px;" class="tabular">₹ ' + formatNumber(grandToday) + '</td>' +
+        '<td style="text-align:center;" class="tabular">' + grandAch.toFixed(1) + '%</td>' +
+      '</tr>';
+    }
+
+    // ------------------------------------------------------------------------
+    // DIRECT ADD CALLER MODAL LOGIC
+    // ------------------------------------------------------------------------
+    function openAddCallerModal() {
+      document.getElementById('addOfficerName').value = '';
+      document.getElementById('addTargetAmt').value = '';
+      document.getElementById('addMtdAmt').value = '';
+      document.getElementById('addCallerModal').style.display = 'flex';
+    }
+
+    function openAddCallerForManagerModal(mgrKey) {
+      document.getElementById('addOfficerName').value = '';
+      document.getElementById('addManagerKey').value = mgrKey;
+      document.getElementById('addTargetAmt').value = '';
+      document.getElementById('addMtdAmt').value = '';
+      document.getElementById('addCallerModal').style.display = 'flex';
+    }
+
+    function closeAddCallerModal() {
+      document.getElementById('addCallerModal').style.display = 'none';
+    }
+
+    async function handleDirectAddCaller(e) {
+      e.preventDefault();
+      var btn = document.getElementById('btnAddCallerSubmit');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      var name = document.getElementById('addOfficerName').value.trim().toUpperCase();
+      var mgrKey = document.getElementById('addManagerKey').value;
+      var tgt = parseNumeric(document.getElementById('addTargetAmt').value);
+      var mtd = parseNumeric(document.getElementById('addMtdAmt').value);
+
+      var newRecord = {
+        officer_name: name,
+        manager_key: mgrKey,
+        target: tgt,
+        aoy: mtd,
+        today: 0,
+        yesterday: 0,
+        status: 'Active'
+      };
+
+      try {
+        var postRes = await fetch(SUPABASE_URL + '/rest/v1/callers', {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(newRecord)
+        });
+
+        if (postRes.ok) {
+          var data = await postRes.json();
+          if (Array.isArray(data) && data.length > 0) {
+            allCallers.push(data[0]);
+          } else {
+            allCallers.push(newRecord);
+          }
+        } else {
+          allCallers.push(newRecord);
+        }
+
+        localStorage.setItem('shaha_admin_callers_cache', JSON.stringify(allCallers));
+        showToast("Added " + name + " to roster successfully!", "success");
+        closeAddCallerModal();
+      } catch(err) {
+        allCallers.push(newRecord);
+        showToast("Saved locally.", "info");
+        closeAddCallerModal();
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Save Caller →';
+      renderCurrentView();
+    }
+
+    // ------------------------------------------------------------------------
+    // EDIT CALLER MODAL LOGIC
+    // ------------------------------------------------------------------------
+    function openEditCallerModal(callerId) {
+      var c = allCallers.find(function(item) { return item.id == callerId; });
+      if (!c) return;
+
+      document.getElementById('editCallerId').value = c.id;
+      document.getElementById('editOfficerName').value = c.officer_name || '';
+      document.getElementById('editManagerKey').value = (c.manager_key || 'ambuj').toLowerCase();
+      document.getElementById('editTargetAmt').value = formatNumber(c.target || 0);
+      document.getElementById('editStatus').value = c.status || 'Active';
+
+      document.getElementById('editCallerModal').style.display = 'flex';
+    }
+
+    function closeEditCallerModal() {
+      document.getElementById('editCallerModal').style.display = 'none';
+    }
+
+    async function handleSaveEditCaller(e) {
+      e.preventDefault();
+      var id = document.getElementById('editCallerId').value;
+      var name = document.getElementById('editOfficerName').value.trim().toUpperCase();
+      var mgrKey = document.getElementById('editManagerKey').value;
+      var tgt = parseNumeric(document.getElementById('editTargetAmt').value);
+      var status = document.getElementById('editStatus').value;
+
+      var c = allCallers.find(function(item) { return item.id == id; });
+      if (c) {
+        c.officer_name = name;
+        c.manager_key = mgrKey;
+        c.target = tgt;
+        c.status = status;
+      }
+
+      try {
+        await fetch(SUPABASE_URL + '/rest/v1/callers?id=eq.' + id, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            officer_name: name,
+            manager_key: mgrKey,
+            target: tgt,
+            status: status
+          })
+        });
+        localStorage.setItem('shaha_admin_callers_cache', JSON.stringify(allCallers));
+        showToast("Updated caller details successfully!", "success");
+      } catch(err) {
+        showToast("Updated locally.", "info");
+      }
+
+      closeEditCallerModal();
+      renderCurrentView();
+    }
+
+    // ------------------------------------------------------------------------
+    // QUICK JUMP TO MANAGER DESK
+    // ------------------------------------------------------------------------
+    function jumpToSelectedManager(mgrKey) {
+      if (!mgrKey) return;
+      var mgrUser = {
+        username: mgrKey,
+        role: 'manager',
+        managerKey: mgrKey,
+        displayName: (MANAGER_NAMES[mgrKey] || mgrKey.toUpperCase()) + " (Manager)"
+      };
+      // Set session so manager.html opens this manager's view immediately
+      localStorage.setItem('shaha_active_user', JSON.stringify(mgrUser));
+      window.open('manager.html', '_blank');
+      // Reset dropdown
+      document.getElementById('jumpToManagerSelect').value = '';
+    }
+
+    // ------------------------------------------------------------------------
+    // UTILITIES
+    // ------------------------------------------------------------------------
+    function setSyncStatus(isBusy, text) {
+      var d = document.getElementById('syncDot');
+      var t = document.getElementById('syncText');
+      if (d) d.className = 'sync-dot' + (isBusy ? ' busy' : '');
+      if (t) t.textContent = text;
+    }
+
+    function handleSignOut() {
+      localStorage.removeItem('shaha_active_user');
+      window.location.replace('index.html');
+    }
+
+    function formatNumber(num) {
+      if (!num) return '0';
+      var parts = Math.round(Number(num)).toString().split('.');
+      var lastThree = parts[0].substring(parts[0].length - 3);
+      var other = parts[0].substring(0, parts[0].length - 3);
+      if (other !== '') lastThree = ',' + lastThree;
+      return other.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + lastThree;
+    }
+
+    function parseNumeric(val) {
+      if (!val) return 0;
+      var clean = String(val).replace(/,/g, '').replace(/[₹\s]/g, '');
+      return parseFloat(clean) || 0;
+    }
+
+    function formatNumberInput(inp) {
+      var val = parseNumeric(inp.value);
+      if (val > 0) inp.value = formatNumber(val);
+    }
+
+    function showToast(msg, type) {
+      var t = document.getElementById('toastBox');
+      t.textContent = (type === 'success' ? '✅ ' : type === 'warning' ? '⚠️ ' : 'ℹ️ ') + msg;
+      t.classList.add('show');
+      setTimeout(function() { t.classList.remove('show'); }, 3000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
