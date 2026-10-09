@@ -26,14 +26,25 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-    body { font-family: var(--font); background: var(--bg); color: var(--text); padding-bottom: 60px; }
+    html, body {
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+    }
     .tabular { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
     /* Top Sticky Header */
     .top-header {
+      height: 44px;
+      flex-shrink: 0;
       background: #ffffff;
       border-bottom: 1px solid var(--border);
-      padding: 10px 20px;
+      padding: 0 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -135,21 +146,32 @@
     .sync-dot.busy { background: #eab308; animation: pulse 1s infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-    .container { max-width: 1440px; margin: 16px auto 0; padding: 0 20px; }
+    .container {
+      height: calc(100vh - 44px);
+      max-height: calc(100vh - 44px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 8px 16px;
+      box-sizing: border-box;
+    }
 
     /* Executive Hero KPI Cards */
     .kpi-grid {
+      flex-shrink: 0;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 12px;
-      margin-bottom: 16px;
+      gap: 10px;
+      margin-bottom: 8px;
     }
 
     .kpi-card {
       background: #ffffff;
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 14px 18px;
+      padding: 10px 14px;
       position: relative;
     }
 
@@ -188,11 +210,12 @@
 
     /* View Controls Bar */
     .controls-bar {
+      flex-shrink: 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
+      gap: 10px;
+      margin-bottom: 8px;
       flex-wrap: wrap;
     }
 
@@ -205,8 +228,8 @@
     }
 
     .view-tab-btn {
-      padding: 6px 14px;
-      font-size: 12px;
+      padding: 5px 12px;
+      font-size: 11.5px;
       font-weight: 700;
       border: none;
       background: transparent;
@@ -215,7 +238,7 @@
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       transition: all 0.12s ease;
     }
 
@@ -239,12 +262,12 @@
     }
 
     .search-box {
-      padding: 7px 12px;
-      font-size: 12px;
+      padding: 5px 10px;
+      font-size: 11.5px;
       border: 1px solid var(--border);
       border-radius: 6px;
       outline: none;
-      width: 240px;
+      width: 220px;
       background: #ffffff;
     }
     .search-box:focus {
@@ -253,16 +276,21 @@
 
     /* Main Table Card */
     .table-card {
+      flex: 1;
+      min-height: 0;
       background: #ffffff;
       border: 1px solid var(--border);
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0;
     }
 
     .table-title-bar {
-      padding: 12px 18px;
+      flex-shrink: 0;
+      padding: 8px 14px;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
@@ -271,7 +299,7 @@
     }
 
     .table-card-title {
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 800;
       color: #09090b;
       display: flex;
@@ -279,17 +307,28 @@
       gap: 8px;
     }
 
+    .table-responsive {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: auto;
+      position: relative;
+    }
+
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
+      font-size: 12.5px;
       text-align: left;
     }
 
     .data-table th {
+      position: sticky;
+      top: 0;
+      z-index: 10;
       background: #f8fafc;
-      padding: 10px 14px;
-      font-size: 11px;
+      padding: 8px 12px;
+      font-size: 10.5px;
       font-weight: 700;
       color: var(--text-muted);
       text-transform: uppercase;
@@ -298,7 +337,7 @@
     }
 
     .data-table td {
-      padding: 10px 14px;
+      padding: 8px 12px;
       border-bottom: 1px solid #f1f5f9;
       vertical-align: middle;
       white-space: nowrap;
