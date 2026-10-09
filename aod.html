@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SHAHA FINLEASE · Always On Display (AOD)</title>
-  <link rel="icon" type="image/png" href="shaha_finlease_logo.png">
   <!-- Supabase Realtime Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -1764,11 +1763,26 @@
       }
     }
 
+    function getReturnDeskUrl() {
+      try {
+        var raw = localStorage.getItem('shaha_active_user');
+        if (raw) {
+          var u = JSON.parse(raw);
+          var r = (u.role || '').toLowerCase();
+          var name = (u.username || '').toLowerCase();
+          if (r === 'admin' || name === 'satish' || name === 'samarth') return 'admin.html';
+          if (r === 'mis' || name === 'tejas' || name === 'komal') return 'mis.html';
+          if (r === 'viewer' || name === 'rohit') return 'viewer.html';
+        }
+      } catch(e) {}
+      return 'manager.html';
+    }
+
     function closeEmbeddedAod() {
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'CLOSE_AOD' }, '*');
       } else {
-        window.location.href = 'manager.html';
+        window.location.href = getReturnDeskUrl();
       }
     }
 
@@ -1805,6 +1819,12 @@
 
     // Startup Lifecycle
     window.addEventListener('DOMContentLoaded', function() {
+      var returnBtn = document.getElementById('btnReturnToManagerDesk');
+      if (returnBtn) {
+        returnBtn.href = getReturnDeskUrl();
+        returnBtn.innerHTML = '<svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Return to Desk';
+      }
+
       updateClock();
       setInterval(updateClock, 1000);
       switchAodTable(_currentAodTable);

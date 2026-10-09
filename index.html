@@ -233,7 +233,9 @@
 
       if (role === 'viewer' || uname === 'rohit') {
         window.location.replace('viewer.html');
-      } else if (role === 'admin' || role === 'mis' || role === 'editor' || uname === 'satish' || uname === 'tejas' || uname === 'samarth') {
+      } else if (role === 'mis' || uname === 'tejas' || uname === 'komal') {
+        window.location.replace('mis.html');
+      } else if (role === 'admin' || uname === 'satish' || uname === 'samarth') {
         window.location.replace('admin.html');
       } else {
         // Floor Manager (Ambuj, Poonam, Smita, Omkar, Aditi, etc.)
@@ -266,6 +268,7 @@
         'satish': { username: 'satish', role: 'admin', displayName: 'Satish (Admin)', managerKey: 'all', pass: '1234' },
         'samarth': { username: 'samarth', role: 'admin', displayName: 'Samarth (Admin)', managerKey: 'all', pass: '1234' },
         'tejas': { username: 'tejas', role: 'mis', displayName: 'Tejas (MIS)', managerKey: 'all', pass: '1234' },
+        'komal': { username: 'komal', role: 'mis', displayName: 'Komal (Paid MIS)', managerKey: 'all', pass: '1234' },
         'rohit': { username: 'rohit', role: 'viewer', displayName: 'Rohit (Viewer)', managerKey: 'all', pass: '1234' },
         'dhruv': { username: 'dhruv', role: 'editor', displayName: 'Dhruv (Customer Service)', managerKey: 'all', pass: '1234' },
         'ambuj': { username: 'ambuj', role: 'manager', displayName: 'Ambuj (Manager)', managerKey: 'ambuj', pass: '1234' },

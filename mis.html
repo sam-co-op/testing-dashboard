@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MIS Floor Operations Desk — Shaha Finlease</title>
+  <!-- Supabase Realtime Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- SheetJS Excel Engine for Bulk Target Management -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    /* ==========================================================================
+       MIS OPERATIONS DESK (TEJAS & KOMAL) · SHAHA FINLEASE
+       Caller Approvals · Paid MIS Pipeline · Bank Allocation · Bulk Targets
+       Strict Monochrome Edward Tufte / Dieter Rams Design System
+       ========================================================================== */
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --border-dark: #09090b;
+      --text: #09090b;
+      --text-muted: #64748b;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); padding-bottom: 60px; }
+    .tabular { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+    /* Top Sticky Header */
+    .top-header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      background: #09090b;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #09090b;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-nav {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      transition: all 0.12s ease;
+    }
+
+    .btn-nav:hover { background: #f1f5f9; color: #09090b; }
+    .btn-nav.active { background: #09090b; color: #ffffff; border-color: #09090b; }
+
+    .select-jump-mgr {
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #09090b;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #f8fafc;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .sync-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+    }
+
+    .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: inline-block; }
+    .sync-dot.busy { background: #eab308; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .container { max-width: 1440px; margin: 16px auto 0; padding: 0 20px; }
+
+    /* KPI Summary Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .kpi-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-top: 4px;
+      color: #09090b;
+    }
+
+    .kpi-sub {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Navigation Tabs */
+    .controls-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .view-tabs-group {
+      display: inline-flex;
+      background: #e2e8f0;
+      padding: 2px;
+      border-radius: 6px;
+      gap: 2px;
+    }
+
+    .view-tab-btn {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: #475569;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.12s ease;
+    }
+
+    .view-tab-btn.active {
+      background: #ffffff;
+      color: #09090b;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+
+    .count-bubble {
+      background: #09090b;
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .count-bubble.zero {
+      background: #cbd5e1;
+      color: #475569;
+    }
+
+    .search-box {
+      padding: 7px 12px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      outline: none;
+      width: 240px;
+      background: #ffffff;
+    }
+    .search-box:focus { border-color: #09090b; }
+
+    /* Content Cards */
+    .table-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      margin-bottom: 20px;
+    }
+
+    .table-title-bar {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fafafa;
+    }
+
+    .table-card-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #09090b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: #f8fafc;
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .data-table tr:hover { background: #fafafa; }
+
+    .btn-approve {
+      background: #09090b;
+      color: #ffffff;
+      border: 1px solid #09090b;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.1s ease;
+    }
+    .btn-approve:hover { background: #27272a; }
+
+    .btn-reject {
+      background: #ffffff;
+      color: #09090b;
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+    .btn-reject:hover { background: #f4f4f5; border-color: #09090b; }
+
+    .badge-status {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+    .badge-pending { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .badge-approved { background: #f4f4f5; color: #09090b; border: 1px solid #09090b; }
+    .badge-rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .modal-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fafafa;
+    }
+
+    .modal-title { font-size: 14px; font-weight: 800; color: #09090b; }
+    .modal-close-btn { background: none; border: none; font-size: 16px; font-weight: 700; cursor: pointer; color: var(--text-muted); }
+    .modal-body { padding: 18px; }
+    .modal-footer { padding: 12px 18px; border-top: 1px solid var(--border); background: #fafafa; display: flex; justify-content: flex-end; gap: 8px; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: #475569; margin-bottom: 4px; }
+    .form-input { width: 100%; padding: 8px 12px; font-size: 13px; border: 1px solid var(--border); border-radius: 6px; outline: none; }
+    .form-input:focus { border-color: #09090b; }
+
+    .toast-box {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #09090b;
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 200;
+    }
+    .toast-box.show { transform: translateY(0); opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Sticky Header -->
+  <header class="top-header">
+    <div class="brand-group">
+      <span class="brand-badge">MIS OPERATIONS</span>
+      <h1 class="header-title">Tejas & Komal Management Console</h1>
+      <div class="sync-pill">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncText">Live Synced</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Quick Manager Jump Dropdown -->
+      <select class="select-jump-mgr" id="jumpToManagerSelect" onchange="jumpToSelectedManager(this.value)" title="Jump into any floor manager calling desk">
+        <option value="">👤 Open Manager Calling Desk...</option>
+        <option value="ambuj">Ambuj Tripathi (Jogeshwari)</option>
+        <option value="poonam">Poonam Indulkar (Jogeshwari)</option>
+        <option value="omkar">Omkar Singh (Jogeshwari)</option>
+        <option value="smita">Smita (Dadar)</option>
+        <option value="aditi">Aditi (Dadar)</option>
+        <option value="shravanti">Shravanti (Dadar)</option>
+        <option value="shweta">Shweta (Dadar)</option>
+        <option value="customerservice">Customer Service</option>
+        <option value="saroj">Saroj</option>
+        <option value="satish">Satish P</option>
+      </select>
+
+      <a href="admin.html" class="btn-nav">👑 Admin Desk</a>
+      <a href="leaderboard.html" class="btn-nav">🏆 Leaderboard</a>
+      <a href="aod.html" target="_blank" class="btn-nav">📺 TV Display ↗</a>
+      <button type="button" class="btn-nav" onclick="handleSignOut()">Sign Out</button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- KPI Summary Grid -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Pending Caller Requests</div>
+        <div class="kpi-value tabular" id="kpiPendingRequests">0</div>
+        <div class="kpi-sub" id="kpiPendingSub">Awaiting Tejas review</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Today's Grand Floor Recovery</div>
+        <div class="kpi-value tabular" id="kpiFloorToday">₹ 0</div>
+        <div class="kpi-sub" id="kpiFloorActive">Loading active floor roster...</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Bank Money Allocated Today</div>
+        <div class="kpi-value tabular" id="kpiBankAllocated">₹ 0</div>
+        <div class="kpi-sub">Komal / Bank pool ledger</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Paid MIS Receipts Logged</div>
+        <div class="kpi-value tabular" id="kpiPaidReceiptsCount">0</div>
+        <div class="kpi-sub">In verified daily pipeline</div>
+      </div>
+    </section>
+
+    <!-- Navigation View Switcher -->
+    <section class="controls-bar">
+      <div class="view-tabs-group">
+        <button type="button" class="view-tab-btn active" id="tabBtnRequests" onclick="switchView('requests')">
+          📋 Caller Requests <span class="count-bubble" id="tabReqBadge">0</span>
+        </button>
+        <button type="button" class="view-tab-btn" id="tabBtnPaidFile" onclick="switchView('paidfile')">
+          💳 Paid MIS Pipeline
+        </button>
+        <button type="button" class="view-tab-btn" id="tabBtnBankMoney" onclick="switchView('bankmoney')">
+          🏦 Bank Money Allocation
+        </button>
+        <button type="button" class="view-tab-btn" id="tabBtnBulkTargets" onclick="switchView('targets')">
+          📊 Bulk Targets (Excel)
+        </button>
+      </div>
+
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="text" id="misSearchInput" class="search-box" placeholder="Filter requests or items..." oninput="handleSearch()">
+      </div>
+    </section>
+
+    <!-- VIEW 1: CALLER REQUEST APPROVALS (TEJAS MIS) -->
+    <section class="table-card" id="viewSectionRequests">
+      <div class="table-title-bar">
+        <div class="table-card-title">
+          📋 Floor Caller Requests & Tejas MIS Approvals
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-nav" onclick="refreshRequestsSilently()">🔄 Refresh Queue</button>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:40px; text-align:center;">#</th>
+              <th>OFFICER / CALLER NAME</th>
+              <th>TEAM / MANAGER</th>
+              <th style="text-align:right;">SHIFT TARGET (₹)</th>
+              <th>REASON / NOTES</th>
+              <th>REQUESTED DATE</th>
+              <th style="text-align:center;">STATUS</th>
+              <th style="text-align:center; width:170px;">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="requestsTableBody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VIEW 2: PAID MIS PIPELINE (KOMAL & TEJAS) -->
+    <section class="table-card" id="viewSectionPaidFile" style="display:none;">
+      <div class="table-title-bar">
+        <div class="table-card-title">
+          💳 Paid MIS Receipts Pipeline & Feed
+        </div>
+        <button type="button" class="btn-nav" onclick="openSubmitPaidModal()">+ Add Paid Receipts</button>
+      </div>
+
+      <div style="padding:16px;">
+        <div style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:12px; font-weight:700; color:var(--text-muted);">Verified Floor Collection Slips:</span>
+          <span style="font-size:12px; font-weight:800;" id="paidTotalAmtLabel">Total Verified: ₹ 0</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:40px; text-align:center;">#</th>
+                <th>MANAGER</th>
+                <th>ACCOUNT / RECEIPT REF</th>
+                <th style="text-align:right;">AMOUNT (₹)</th>
+                <th>SUBMISSION TIME</th>
+                <th style="text-align:center;">STATUS</th>
+                <th style="text-align:center; width:120px;">ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="paidFileTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: BANK MONEY ALLOCATION (KOMAL) -->
+    <section class="table-card" id="viewSectionBankMoney" style="display:none;">
+      <div class="table-title-bar">
+        <div class="table-card-title">
+          🏦 Bank Money Allocation Ledger (Komal)
+        </div>
+        <button type="button" class="btn-nav" onclick="openAssignBankModal()">+ Allocate Bank Pool</button>
+      </div>
+
+      <div style="padding:16px;">
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">
+          Distribute collected bank deposits from Komal's central account pool to individual manager portfolios.
+        </p>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:40px; text-align:center;">#</th>
+                <th>MANAGER TEAM</th>
+                <th style="text-align:right;">ALLOCATED AMOUNT (₹)</th>
+                <th>TIME</th>
+                <th>NOTES</th>
+                <th style="text-align:center; width:100px;">ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="bankMoneyTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: BULK TARGETS MANAGEMENT -->
+    <section class="table-card" id="viewSectionTargets" style="display:none;">
+      <div class="table-title-bar">
+        <div class="table-card-title">
+          📊 Excel Bulk Target Upload & Sync
+        </div>
+        <button type="button" class="btn-nav" onclick="downloadSampleTemplate()">📥 Download Template (.xlsx)</button>
+      </div>
+
+      <div style="padding:24px; text-align:center;">
+        <div style="max-width:540px; margin:0 auto; border:2px dashed var(--border); border-radius:10px; padding:32px; background:#fafafa;">
+          <div style="font-size:32px; margin-bottom:10px;">📤</div>
+          <h3 style="font-size:15px; font-weight:800; margin-bottom:6px;">Upload Monthly Targets Spreadsheet</h3>
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">
+            Upload your monthly Excel or CSV targets file. Targets will sync immediately to Supabase and reflect live on all caller desks.
+          </p>
+          <input type="file" id="targetExcelFileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleExcelFileUpload(event)">
+          <button type="button" class="btn-nav" style="background:#09090b; color:#fff; padding:10px 20px; font-size:13px;" onclick="document.getElementById('targetExcelFileInput').click()">
+            Select Excel File →
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: SUBMIT PAID RECEIPTS -->
+  <div id="submitPaidModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">+ Add Paid Receipts to Pipeline</h3>
+        <button type="button" class="modal-close-btn" onclick="closeSubmitPaidModal()">✕</button>
+      </div>
+      <form onsubmit="handleSubmitPaidForm(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Manager Team</label>
+            <select id="paidModalMgrSelect" required class="form-input">
+              <option value="ambuj">Ambuj Tripathi</option>
+              <option value="poonam">Poonam Indulkar</option>
+              <option value="omkar">Omkar Singh</option>
+              <option value="smita">Smita</option>
+              <option value="aditi">Aditi</option>
+              <option value="shravanti">Shravanti</option>
+              <option value="shweta">Shweta</option>
+              <option value="customerservice">Customer Service</option>
+              <option value="saroj">Saroj</option>
+              <option value="satish">Satish P</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Receipt / Account Number</label>
+            <input type="text" id="paidModalRef" required class="form-input" placeholder="e.g. REC-88392 / ACC-10928">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Amount (₹)</label>
+            <input type="text" id="paidModalAmount" required class="form-input tabular" placeholder="e.g. 25,000" oninput="formatNumberInput(this)">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-nav" onclick="closeSubmitPaidModal()">Cancel</button>
+          <button type="submit" class="btn-nav" style="background:#09090b; color:#fff;">Save Receipt →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ASSIGN BANK MONEY -->
+  <div id="assignBankModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">+ Allocate Bank Money Pool</h3>
+        <button type="button" class="modal-close-btn" onclick="closeAssignBankModal()">✕</button>
+      </div>
+      <form onsubmit="handleSubmitBankAllocation(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Assign To Manager</label>
+            <select id="bankModalMgrSelect" required class="form-input">
+              <option value="ambuj">Ambuj Tripathi</option>
+              <option value="poonam">Poonam Indulkar</option>
+              <option value="omkar">Omkar Singh</option>
+              <option value="smita">Smita</option>
+              <option value="aditi">Aditi</option>
+              <option value="shravanti">Shravanti</option>
+              <option value="shweta">Shweta</option>
+              <option value="customerservice">Customer Service</option>
+              <option value="saroj">Saroj</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Allocation Amount (₹)</label>
+            <input type="text" id="bankModalAmount" required class="form-input tabular" placeholder="e.g. 50,000" oninput="formatNumberInput(this)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes</label>
+            <input type="text" id="bankModalNotes" class="form-input" placeholder="e.g. Morning RTGS direct bank transfer">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-nav" onclick="closeAssignBankModal()">Cancel</button>
+          <button type="submit" class="btn-nav" style="background:#09090b; color:#fff;">Allocate Pool →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toastBox" class="toast-box">Notification</div>
+
+  <script>
+    var SUPABASE_URL = "https://vrpdsxmuqjxjarruujkl.supabase.co";
+    var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZycGRzeG11cWp4amFycnV1amtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTg5ODEsImV4cCI6MjEwNjQ5NDk4MX0.VMCkbrC_jBEsDYyKGg-I6J9ncRkeWytBJpca-GhDV7s";
+
+    var MANAGER_NAMES = {
+      'ambuj': 'Ambuj Tripathi',
+      'poonam': 'Poonam Indulkar',
+      'omkar': 'Omkar Singh',
+      'smita': 'Smita',
+      'aditi': 'Aditi',
+      'shravanti': 'Shravanti',
+      'shweta': 'Shweta',
+      'customerservice': 'Customer Service',
+      'saroj': 'Saroj',
+      'satish': 'Satish P'
+    };
+
+    var currentView = 'requests';
+    var callerRequests = [];
+    var allCallers = [];
+    var paidSubmissions = [];
+    var bankAllocations = [];
+
+    // Session Verification
+    (function initSession() {
+      try {
+        var raw = localStorage.getItem('shaha_active_user');
+        if (!raw) {
+          window.location.replace('index.html');
+          return;
+        }
+        var user = JSON.parse(raw);
+        var role = (user.role || '').toLowerCase();
+        if (role !== 'mis' && role !== 'admin') {
+          // Non-MIS/admin users redirected to their respective desks
+          if (role === 'viewer') window.location.replace('viewer.html');
+          else window.location.replace('manager.html');
+        }
+      } catch(e) {}
+    })();
+
+    // Startup Lifecycle
+    window.addEventListener('DOMContentLoaded', async function() {
+      loadCachedData();
+      await refreshAllData();
+      setupRealtime();
+    });
+
+    function loadCachedData() {
+      try {
+        var cachedReqs = localStorage.getItem('shaha_mis_requests_cache');
+        if (cachedReqs) {
+          callerRequests = JSON.parse(cachedReqs);
+          renderRequestsTable();
+        }
+        var cachedCallers = localStorage.getItem('shaha_floor_callers_cache');
+        if (cachedCallers) {
+          allCallers = JSON.parse(cachedCallers);
+          updateKPIs();
+        }
+        var cachedPaid = localStorage.getItem('shaha_paid_submissions_cache');
+        if (cachedPaid) {
+          paidSubmissions = JSON.parse(cachedPaid);
+          renderPaidTable();
+        }
+        var cachedBank = localStorage.getItem('shaha_bank_allocations_cache');
+        if (cachedBank) {
+          bankAllocations = JSON.parse(cachedBank);
+          renderBankTable();
+        }
+      } catch(e) {}
+    }
+
+    async function refreshAllData() {
+      setSyncStatus(true, "Syncing...");
+      await Promise.all([
+        refreshRequestsSilently(),
+        refreshCallersSilently()
+      ]);
+      setSyncStatus(false, "Live Synced");
+    }
+
+    // View Switching
+    function switchView(viewName) {
+      currentView = viewName;
+      document.querySelectorAll('.view-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.table-card').forEach(function(c) { c.style.display = 'none'; });
+
+      if (viewName === 'requests') {
+        document.getElementById('tabBtnRequests').classList.add('active');
+        document.getElementById('viewSectionRequests').style.display = 'block';
+        renderRequestsTable();
+      } else if (viewName === 'paidfile') {
+        document.getElementById('tabBtnPaidFile').classList.add('active');
+        document.getElementById('viewSectionPaidFile').style.display = 'block';
+        renderPaidTable();
+      } else if (viewName === 'bankmoney') {
+        document.getElementById('tabBtnBankMoney').classList.add('active');
+        document.getElementById('viewSectionBankMoney').style.display = 'block';
+        renderBankTable();
+      } else if (viewName === 'targets') {
+        document.getElementById('tabBtnBulkTargets').classList.add('active');
+        document.getElementById('viewSectionTargets').style.display = 'block';
+      }
+    }
+
+    function handleSearch() {
+      if (currentView === 'requests') renderRequestsTable();
+      else if (currentView === 'paidfile') renderPaidTable();
+    }
+
+    // ------------------------------------------------------------------------
+    // REQUESTS QUEUE ENGINE (TEJAS APPROVALS)
+    // ------------------------------------------------------------------------
+    async function refreshRequestsSilently() {
+      try {
+        var res = await fetch(SUPABASE_URL + '/rest/v1/users?username=like.__caller_request_%25&order=created_at.desc', {
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+        });
+        if (res.ok) {
+          var data = await res.json();
+          callerRequests = [];
+          data.forEach(function(u) {
+            try {
+              var parsed = JSON.parse(u.display_name);
+              parsed._dbId = u.id;
+              parsed._dbUsername = u.username;
+              callerRequests.push(parsed);
+            } catch(e) {}
+          });
+          localStorage.setItem('shaha_mis_requests_cache', JSON.stringify(callerRequests));
+          renderRequestsTable();
+        }
+      } catch(e) {}
+    }
+
+    function renderRequestsTable() {
+      var tbody = document.getElementById('requestsTableBody');
+      var filter = (document.getElementById('misSearchInput').value || '').trim().toLowerCase();
+
+      var list = callerRequests;
+      if (filter) {
+        list = list.filter(function(r) {
+          return (r.officer_name || '').toLowerCase().indexOf(filter) !== -1 ||
+                 (r.manager_key || '').toLowerCase().indexOf(filter) !== -1;
+        });
+      }
+
+      var pendingCount = 0;
+      callerRequests.forEach(function(r) { if (r.status === 'pending') pendingCount++; });
+      document.getElementById('kpiPendingRequests').textContent = pendingCount;
+      document.getElementById('kpiPendingSub').textContent = pendingCount === 0 ? 'All requests processed' : (pendingCount + ' awaiting Tejas review');
+      var badge = document.getElementById('tabReqBadge');
+      badge.textContent = pendingCount;
+      badge.className = 'count-bubble' + (pendingCount === 0 ? ' zero' : '');
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted);">No requests found.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      list.forEach(function(r, idx) {
+        var isPending = r.status === 'pending';
+        var statusBadge = isPending
+          ? '<span class="badge-status badge-pending">⏳ Pending Review</span>'
+          : (r.status === 'approved'
+              ? '<span class="badge-status badge-approved">✓ Approved</span>'
+              : '<span class="badge-status badge-rejected">✕ Rejected</span>');
+
+        var actions = isPending
+          ? '<div style="display:flex; gap:6px; justify-content:center;">' +
+              '<button type="button" class="btn-approve" onclick="approveCallerRequest(' + idx + ')">Approve ✓</button>' +
+              '<button type="button" class="btn-reject" onclick="rejectCallerRequest(' + idx + ')">Reject ✕</button>' +
+            '</div>'
+          : '<span style="color:var(--text-muted); font-size:11px;">Processed</span>';
+
+        var dtStr = r.requested_at ? new Date(r.requested_at).toLocaleDateString('en-GB') : '—';
+
+        html += '<tr>' +
+          '<td style="text-align:center; font-weight:700;" class="tabular">' + (idx + 1) + '</td>' +
+          '<td style="font-weight:800;">' + escapeHtml(r.officer_name) + '</td>' +
+          '<td><span style="font-weight:700;">' + (MANAGER_NAMES[r.manager_key] || r.manager_key) + '</span></td>' +
+          '<td style="text-align:right;" class="tabular">₹ ' + formatNumber(r.target) + '</td>' +
+          '<td style="font-size:12px; color:#475569;">' + escapeHtml(r.reason || 'Floor Expansion') + '</td>' +
+          '<td style="font-size:11.5px; color:var(--text-muted);">' + dtStr + '</td>' +
+          '<td style="text-align:center;">' + statusBadge + '</td>' +
+          '<td style="text-align:center;">' + actions + '</td>' +
+        '</tr>';
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    async function approveCallerRequest(idx) {
+      var req = callerRequests[idx];
+      if (!req) return;
+
+      if (!confirm("Approve '" + req.officer_name + "' and add to " + (MANAGER_NAMES[req.manager_key] || req.manager_key) + "'s roster?")) {
+        return;
+      }
+
+      setSyncStatus(true, "Approving...");
+      try {
+        // 1. Insert new caller record into callers table
+        await fetch(SUPABASE_URL + '/rest/v1/callers', {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            officer_name: req.officer_name,
+            manager_key: req.manager_key,
+            target: Number(req.target) || 0,
+            today: 0,
+            yesterday: 0,
+            status: 'Active'
+          })
+        });
+
+        // 2. Mark request record approved
+        req.status = 'approved';
+        req.approved_by = 'Tejas (MIS)';
+        req.approved_at = new Date().toISOString();
+
+        if (req._dbId) {
+          await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + req._dbId, {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ display_name: JSON.stringify(req) })
+          });
+        }
+
+        showToast("Approved and added " + req.officer_name + " to floor roster!", "success");
+        renderRequestsTable();
+        refreshCallersSilently();
+      } catch(err) {
+        showToast("Error approving request: " + err.message, "error");
+      }
+      setSyncStatus(false, "Live Synced");
+    }
+
+    async function rejectCallerRequest(idx) {
+      var req = callerRequests[idx];
+      if (!req) return;
+
+      var reason = prompt("Enter reason for rejection (optional):", "Target mismatch / duplicate");
+      if (reason === null) return;
+
+      setSyncStatus(true, "Rejecting...");
+      try {
+        req.status = 'rejected';
+        req.rejected_by = 'Tejas (MIS)';
+        req.rejection_reason = reason;
+        req.rejected_at = new Date().toISOString();
+
+        if (req._dbId) {
+          await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + req._dbId, {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ display_name: JSON.stringify(req) })
+          });
+        }
+
+        showToast("Request marked as rejected.", "info");
+        renderRequestsTable();
+      } catch(e) {}
+      setSyncStatus(false, "Live Synced");
+    }
+
+    // ------------------------------------------------------------------------
+    // PAID FILE PIPELINE (KOMAL & TEJAS)
+    // ------------------------------------------------------------------------
+    function openSubmitPaidModal() {
+      document.getElementById('paidModalRef').value = '';
+      document.getElementById('paidModalAmount').value = '';
+      document.getElementById('submitPaidModal').style.display = 'flex';
+    }
+    function closeSubmitPaidModal() { document.getElementById('submitPaidModal').style.display = 'none'; }
+
+    function handleSubmitPaidForm(e) {
+      e.preventDefault();
+      var mgr = document.getElementById('paidModalMgrSelect').value;
+      var ref = document.getElementById('paidModalRef').value.trim();
+      var amt = parseNumeric(document.getElementById('paidModalAmount').value);
+
+      var entry = {
+        id: 'paid_' + Date.now(),
+        manager: mgr,
+        ref: ref,
+        amount: amt,
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        status: 'Processed'
+      };
+
+      paidSubmissions.unshift(entry);
+      localStorage.setItem('shaha_paid_submissions_cache', JSON.stringify(paidSubmissions));
+      closeSubmitPaidModal();
+      renderPaidTable();
+      showToast("Paid receipt logged for " + (MANAGER_NAMES[mgr] || mgr), "success");
+    }
+
+    function renderPaidTable() {
+      var tbody = document.getElementById('paidFileTableBody');
+      var filter = (document.getElementById('misSearchInput').value || '').trim().toLowerCase();
+
+      var list = paidSubmissions;
+      if (filter) {
+        list = list.filter(function(p) {
+          return (p.manager || '').toLowerCase().indexOf(filter) !== -1 ||
+                 (p.ref || '').toLowerCase().indexOf(filter) !== -1;
+        });
+      }
+
+      var totalAmt = 0;
+      paidSubmissions.forEach(function(p) { totalAmt += Number(p.amount) || 0; });
+      document.getElementById('kpiPaidReceiptsCount').textContent = paidSubmissions.length;
+      document.getElementById('paidTotalAmtLabel').textContent = 'Total Verified: ₹ ' + formatNumber(totalAmt);
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">No receipts logged yet.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      list.forEach(function(p, idx) {
+        html += '<tr>' +
+          '<td style="text-align:center; font-weight:700;" class="tabular">' + (idx + 1) + '</td>' +
+          '<td style="font-weight:700;">' + (MANAGER_NAMES[p.manager] || p.manager) + '</td>' +
+          '<td>' + escapeHtml(p.ref) + '</td>' +
+          '<td style="text-align:right; font-weight:800;" class="tabular">₹ ' + formatNumber(p.amount) + '</td>' +
+          '<td style="font-size:12px; color:var(--text-muted);">' + p.time + '</td>' +
+          '<td style="text-align:center;"><span class="badge-status badge-approved">✓ Processed</span></td>' +
+          '<td style="text-align:center;">' +
+            '<button type="button" class="btn-reject" onclick="deletePaidEntry(' + idx + ')">Delete</button>' +
+          '</td>' +
+        '</tr>';
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function deletePaidEntry(idx) {
+      if (!confirm("Delete this paid receipt?")) return;
+      paidSubmissions.splice(idx, 1);
+      localStorage.setItem('shaha_paid_submissions_cache', JSON.stringify(paidSubmissions));
+      renderPaidTable();
+    }
+
+    // ------------------------------------------------------------------------
+    // BANK MONEY ALLOCATION (KOMAL)
+    // ------------------------------------------------------------------------
+    function openAssignBankModal() {
+      document.getElementById('bankModalAmount').value = '';
+      document.getElementById('bankModalNotes').value = '';
+      document.getElementById('assignBankModal').style.display = 'flex';
+    }
+    function closeAssignBankModal() { document.getElementById('assignBankModal').style.display = 'none'; }
+
+    function handleSubmitBankAllocation(e) {
+      e.preventDefault();
+      var mgr = document.getElementById('bankModalMgrSelect').value;
+      var amt = parseNumeric(document.getElementById('bankModalAmount').value);
+      var notes = document.getElementById('bankModalNotes').value.trim();
+
+      var entry = {
+        id: 'bank_' + Date.now(),
+        manager: mgr,
+        amount: amt,
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        notes: notes || 'Direct bank deposit'
+      };
+
+      bankAllocations.unshift(entry);
+      localStorage.setItem('shaha_bank_allocations_cache', JSON.stringify(bankAllocations));
+      closeAssignBankModal();
+      renderBankTable();
+      showToast("Allocated ₹ " + formatNumber(amt) + " to " + (MANAGER_NAMES[mgr] || mgr), "success");
+    }
+
+    function renderBankTable() {
+      var tbody = document.getElementById('bankMoneyTableBody');
+      var totalAmt = 0;
+      bankAllocations.forEach(function(b) { totalAmt += Number(b.amount) || 0; });
+      document.getElementById('kpiBankAllocated').textContent = '₹ ' + formatNumber(totalAmt);
+
+      if (bankAllocations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:32px; color:var(--text-muted);">No bank allocations recorded today.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      bankAllocations.forEach(function(b, idx) {
+        html += '<tr>' +
+          '<td style="text-align:center; font-weight:700;" class="tabular">' + (idx + 1) + '</td>' +
+          '<td style="font-weight:700;">' + (MANAGER_NAMES[b.manager] || b.manager) + '</td>' +
+          '<td style="text-align:right; font-weight:800;" class="tabular">₹ ' + formatNumber(b.amount) + '</td>' +
+          '<td style="font-size:12px; color:var(--text-muted);">' + b.time + '</td>' +
+          '<td style="font-size:12px; color:#475569;">' + escapeHtml(b.notes) + '</td>' +
+          '<td style="text-align:center;">' +
+            '<button type="button" class="btn-reject" onclick="deleteBankEntry(' + idx + ')">Revert</button>' +
+          '</td>' +
+        '</tr>';
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function deleteBankEntry(idx) {
+      if (!confirm("Revert this bank allocation?")) return;
+      bankAllocations.splice(idx, 1);
+      localStorage.setItem('shaha_bank_allocations_cache', JSON.stringify(bankAllocations));
+      renderBankTable();
+    }
+
+    // ------------------------------------------------------------------------
+    // BULK EXCEL TARGETS
+    // ------------------------------------------------------------------------
+    function downloadSampleTemplate() {
+      if (typeof XLSX === 'undefined') {
+        alert("Excel engine loading, please retry in a moment.");
+        return;
+      }
+      var wsData = [
+        ["CALLER_NAME", "MANAGER", "TARGET"],
+        ["PRIYANKA SHARMA", "Ambuj Tripathi", 250000],
+        ["RAHUL PATIL", "Ambuj Tripathi", 200000],
+        ["SNEHA KULKARNI", "Smita", 300000]
+      ];
+      var wb = XLSX.utils.book_new();
+      var ws = XLSX.utils.aoa_to_sheet(wsData);
+      XLSX.utils.book_append_sheet(wb, ws, "Targets");
+      XLSX.writeFile(wb, "Caller_Targets_Template.xlsx");
+    }
+
+    async function handleExcelFileUpload(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+
+      var reader = new FileReader();
+      reader.onload = async function(evt) {
+        try {
+          var data = new Uint8Array(evt.target.result);
+          var wb = XLSX.read(data, { type: 'array' });
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          var json = XLSX.utils.sheet_to_json(ws);
+
+          if (!json || json.length === 0) {
+            alert("Uploaded spreadsheet is empty.");
+            return;
+          }
+
+          setSyncStatus(true, "Updating targets...");
+          var count = 0;
+          for (var i = 0; i < json.length; i++) {
+            var row = json[i];
+            var name = row.CALLER_NAME || row.Caller || row.Name || row.officer_name;
+            var target = row.TARGET || row.Target || row.target;
+            if (name && target) {
+              await fetch(SUPABASE_URL + '/rest/v1/callers?officer_name=eq.' + encodeURIComponent(String(name).trim()), {
+                method: 'PATCH',
+                headers: {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ target: Number(target) })
+              });
+              count++;
+            }
+          }
+
+          showToast("Successfully synced " + count + " caller targets!", "success");
+          refreshCallersSilently();
+        } catch(err) {
+          alert("Error parsing Excel: " + err.message);
+        }
+        setSyncStatus(false, "Live Synced");
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // ------------------------------------------------------------------------
+    // DATA SYNC & HELPERS
+    // ------------------------------------------------------------------------
+    async function refreshCallersSilently() {
+      try {
+        var res = await fetch(SUPABASE_URL + '/rest/v1/callers?order=officer_name.asc', {
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+        });
+        if (res.ok) {
+          allCallers = await res.json();
+          localStorage.setItem('shaha_floor_callers_cache', JSON.stringify(allCallers));
+          updateKPIs();
+        }
+      } catch(e) {}
+    }
+
+    function updateKPIs() {
+      var totalToday = 0;
+      var activeCount = 0;
+      allCallers.forEach(function(c) {
+        if (c.status !== 'Inactive' && c.status !== 'Hidden') {
+          activeCount++;
+          totalToday += Number(c.today) || 0;
+        }
+      });
+      document.getElementById('kpiFloorToday').textContent = '₹ ' + formatNumber(totalToday);
+      document.getElementById('kpiFloorActive').textContent = activeCount + ' active floor callers';
+    }
+
+    function setupRealtime() {
+      try {
+        var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        client.channel('mis_realtime_channel')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'callers' }, function() {
+            refreshCallersSilently();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, function() {
+            refreshRequestsSilently();
+          })
+          .subscribe();
+      } catch(e) {}
+    }
+
+    function jumpToSelectedManager(mgrKey) {
+      if (!mgrKey) return;
+      window.location.href = 'manager.html?manager=' + encodeURIComponent(mgrKey);
+    }
+
+    function setSyncStatus(isBusy, text) {
+      document.getElementById('syncDot').className = 'sync-dot' + (isBusy ? ' busy' : '');
+      document.getElementById('syncText').textContent = text;
+    }
+
+    function handleSignOut() {
+      localStorage.removeItem('shaha_active_user');
+      window.location.replace('index.html');
+    }
+
+    function formatNumber(num) {
+      if (!num) return '0';
+      var parts = Math.round(Number(num)).toString().split('.');
+      var lastThree = parts[0].substring(parts[0].length - 3);
+      var other = parts[0].substring(0, parts[0].length - 3);
+      if (other !== '') lastThree = ',' + lastThree;
+      return other.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + lastThree;
+    }
+
+    function parseNumeric(val) {
+      if (!val) return 0;
+      var clean = String(val).replace(/,/g, '').replace(/[₹\s]/g, '');
+      return parseFloat(clean) || 0;
+    }
+
+    function formatNumberInput(inp) {
+      var val = parseNumeric(inp.value);
+      if (val > 0) inp.value = formatNumber(val);
+    }
+
+    function showToast(msg, type) {
+      var t = document.getElementById('toastBox');
+      t.textContent = (type === 'success' ? '✅ ' : 'ℹ️ ') + msg;
+      t.classList.add('show');
+      setTimeout(function() { t.classList.remove('show'); }, 3000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

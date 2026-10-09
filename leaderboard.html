@@ -715,8 +715,8 @@
     </div>
 
     <div class="nav-links">
-      <a href="manager.html" class="nav-btn" title="Open Calling Floor Desk">
-        ← Calling Desk
+      <a href="manager.html" id="btnReturnToDesk" class="nav-btn" title="Return to Role Desk">
+        ← Return to Desk
       </a>
       <a href="aod.html" class="nav-btn" title="Open TV Mode Always On Display">
         📺 Always On Display
@@ -1127,10 +1127,30 @@
       return isNaN(parsed) ? 0 : parsed;
     }
 
+    function getReturnDeskUrl() {
+      try {
+        var raw = localStorage.getItem('shaha_active_user');
+        if (raw) {
+          var u = JSON.parse(raw);
+          var r = (u.role || '').toLowerCase();
+          var name = (u.username || '').toLowerCase();
+          if (r === 'admin' || name === 'satish' || name === 'samarth') return 'admin.html';
+          if (r === 'mis' || name === 'tejas' || name === 'komal') return 'mis.html';
+          if (r === 'viewer' || name === 'rohit') return 'viewer.html';
+        }
+      } catch(e) {}
+      return 'manager.html';
+    }
+
     // ------------------------------------------------------------------------
     // INITIALIZATION & LIFECYCLE
     // ------------------------------------------------------------------------
     window.addEventListener('DOMContentLoaded', async function() {
+      var retBtn = document.getElementById('btnReturnToDesk');
+      if (retBtn) {
+        retBtn.href = getReturnDeskUrl();
+      }
+
       loadHiddenPreferences();
       initMonthSelector();
       checkNewMonthStatus();

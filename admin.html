@@ -573,6 +573,8 @@
       </select>
 
       <button type="button" class="btn-nav btn-nav-primary" onclick="openAddCallerModal()">+ Add Caller</button>
+      <button type="button" class="btn-nav" onclick="triggerManualDailyRollover()" title="Archive today to yesterday and reset callers to ₹ 0">🔄 Reset Shift for New Day</button>
+      <a href="mis.html" class="btn-nav">📋 MIS Desk ↗</a>
       <a href="leaderboard.html" class="btn-nav">🏆 Leaderboard</a>
       <a href="viewer.html" class="btn-nav">👁 Viewer</a>
       <a href="aod.html" target="_blank" class="btn-nav">📺 TV Display ↗</a>
@@ -1697,6 +1699,85 @@
       var t = document.getElementById('syncText');
       if (d) d.className = 'sync-dot' + (isBusy ? ' busy' : '');
       if (t) t.textContent = text;
+    }
+
+    function getTodayDateString() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    async function triggerManualDailyRollover() {
+      if (!confirm("⚠️ RESET SHIFT FOR NEW DAY:\n\nAre you sure you want to archive current floor collections into Yesterday baseline and reset all caller collection entries to ₹ 0 for a new shift?")) {
+        return;
+      }
+
+      setSyncStatus(true, "Archiving shift...");
+      try {
+        var todayStr = getTodayDateString();
+        var floorTotal = 0;
+        var managerTotals = {};
+        var callersWithColl = allCallers.filter(function(c) { return (Number(c.today) || 0) > 0; });
+
+        allCallers.forEach(function(c) {
+          var amt = Number(c.today) || 0;
+          var mk = (c.manager_key || '').toLowerCase();
+          floorTotal += amt;
+          managerTotals[mk] = (managerTotals[mk] || 0) + amt;
+        });
+
+        // 1. Archive to Supabase
+        var archiveUsername = '__daily_archive_' + todayStr + '__';
+        await fetch(SUPABASE_URL + '/rest/v1/users', {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username: archiveUsername,
+            password: 'archive_protected_1234',
+            role: 'archive',
+            display_name: JSON.stringify({
+              date: todayStr,
+              floorTotal: floorTotal,
+              managers: managerTotals
+            }),
+            manager_key: 'all'
+          })
+        });
+
+        // 2. Reset each caller with today > 0
+        for (var i = 0; i < callersWithColl.length; i++) {
+          var clr = callersWithColl[i];
+          await fetch(SUPABASE_URL + '/rest/v1/callers?id=eq.' + clr.id, {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              yesterday: Number(clr.today) || 0,
+              today: 0,
+              updated_at: new Date().toISOString()
+            })
+          });
+          clr.yesterday = Number(clr.today) || 0;
+          clr.today = 0;
+        }
+
+        // Update local caches
+        localStorage.setItem('shaha_floor_callers_cache', JSON.stringify(allCallers));
+        localStorage.setItem('shaha_daily_archive_' + todayStr, JSON.stringify({ date: todayStr, floorTotal: floorTotal, managers: managerTotals }));
+
+        showToast("Shift reset successfully! ₹ " + formatNumber(floorTotal) + " archived to yesterday. All callers reset to ₹ 0.", "success");
+        renderCurrentView();
+        updateGrandScorecard();
+      } catch(err) {
+        showToast("Error during rollover: " + err.message, "error");
+      }
+      setSyncStatus(false, "Live Synced");
     }
 
     function handleSignOut() {

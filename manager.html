@@ -329,6 +329,7 @@
     </div>
 
     <div class="header-right">
+      <a id="btnBackToControlDesk" href="admin.html" class="btn-header" style="display:none; background:#09090b; color:#fff;">← Back to Operations Desk</a>
       <button type="button" class="btn-header" onclick="openRequestCallerModal()" title="Request Tejas MIS to add a new caller">+ Request Caller</button>
       <a href="leaderboard.html" class="btn-header" title="Open Monthly Performance Leaderboard">🏆 Leaderboard</a>
       <a href="aod.html" target="_blank" class="btn-header" title="Open TV Display">📺 TV Display ↗</a>
@@ -417,33 +418,47 @@
   <!-- MODAL: REQUEST NEW CALLER TO TEJAS MIS -->
   <div id="requestCallerModal" class="modal-overlay">
     <div class="modal-card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="font-size:15px; font-weight:800;">Request New Caller Addition</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="font-size:15px; font-weight:800;">Caller Requests Desk</h3>
         <button type="button" class="btn-header" onclick="closeRequestCallerModal()">✕</button>
       </div>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">
-        Submit a new caller request for approval by Tejas (MIS). Once approved, they will instantly appear on your desk.
-      </p>
 
-      <form onsubmit="submitCallerRequest(event)">
-        <div style="margin-bottom:12px;">
-          <label style="display:block; font-size:11.5px; font-weight:700; margin-bottom:4px;">Officer / Caller Full Name</label>
-          <input type="text" id="reqCallerName" required class="search-input" style="width:100%;" placeholder="e.g. PRIYANKA SHARMA">
-        </div>
-        <div style="margin-bottom:12px;">
-          <label style="display:block; font-size:11.5px; font-weight:700; margin-bottom:4px;">Shift Target (₹)</label>
-          <input type="text" id="reqCallerTarget" class="search-input tabular" style="width:100%;" placeholder="e.g. 2,50,000" oninput="formatNumberInput(this)">
-        </div>
-        <div style="margin-bottom:18px;">
-          <label style="display:block; font-size:11.5px; font-weight:700; margin-bottom:4px;">Reason / Notes</label>
-          <input type="text" id="reqCallerReason" class="search-input" style="width:100%;" placeholder="e.g. New joined officer / replacement">
-        </div>
+      <div style="display:flex; gap:6px; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+        <button type="button" class="btn-header" id="btnTabNewReq" onclick="switchReqModalTab('new')" style="background:#09090b; color:#fff;">+ New Request</button>
+        <button type="button" class="btn-header" id="btnTabMyReqs" onclick="switchReqModalTab('my')">📋 My Requests (<span id="myReqCount">0</span>)</button>
+      </div>
 
-        <div style="display:flex; justify-content:flex-end; gap:8px;">
-          <button type="button" class="btn-header" onclick="closeRequestCallerModal()">Cancel</button>
-          <button type="submit" id="btnSubmitReq" class="btn-header" style="background:#09090b; color:#fff;">Submit to MIS →</button>
+      <div id="tabContentNewReq">
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">
+          Submit a new caller request for approval by Tejas (MIS). Once approved, they will instantly appear on your calling desk.
+        </p>
+
+        <form onsubmit="submitCallerRequest(event)">
+          <div style="margin-bottom:12px;">
+            <label style="display:block; font-size:11.5px; font-weight:700; margin-bottom:4px;">Officer / Caller Full Name</label>
+            <input type="text" id="reqCallerName" required class="search-input" style="width:100%;" placeholder="e.g. PRIYANKA SHARMA">
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="display:block; font-size:11.5px; font-weight:700; margin-bottom:4px;">Shift Target (₹)</label>
+            <input type="text" id="reqCallerTarget" class="search-input tabular" style="width:100%;" placeholder="e.g. 2,50,000" oninput="formatNumberInput(this)">
+          </div>
+          <div style="margin-bottom:18px;">
+            <label style="display:block; font-size:11.5px; font-weight:700; margin-bottom:4px;">Reason / Notes</label>
+            <input type="text" id="reqCallerReason" class="search-input" style="width:100%;" placeholder="e.g. New joined officer / replacement">
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button type="button" class="btn-header" onclick="closeRequestCallerModal()">Cancel</button>
+            <button type="submit" id="btnSubmitReq" class="btn-header" style="background:#09090b; color:#fff;">Submit to MIS →</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="tabContentMyReqs" style="display:none; max-height:280px; overflow-y:auto;">
+        <div id="myRequestsListContainer" style="font-size:12px; color:var(--text-muted); padding:10px 0;">
+          Loading your request history...
         </div>
-      </form>
+      </div>
     </div>
   </div>
 
@@ -459,7 +474,7 @@
     var teamProjection = 0;
 
     // ------------------------------------------------------------------------
-    // SESSION RESTORATION
+    // SESSION RESTORATION & MANAGER RESOLUTION
     // ------------------------------------------------------------------------
     (function initSession() {
       try {
@@ -472,6 +487,11 @@
             currentManagerKey = currentUser.username.toLowerCase();
           }
         }
+        var params = new URLSearchParams(window.location.search);
+        var qMgr = params.get('manager');
+        if (qMgr) {
+          currentManagerKey = qMgr.toLowerCase();
+        }
       } catch(e) {}
     })();
 
@@ -481,6 +501,21 @@
     window.addEventListener('DOMContentLoaded', function() {
       document.getElementById('deskTeamTitle').textContent = currentManagerKey.toUpperCase() + " CALLING DESK";
       document.getElementById('tableRosterTitle').textContent = currentManagerKey.toUpperCase() + " ROSTER";
+
+      // If Admin or MIS is viewing this desk, show back link
+      if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'mis')) {
+        var backBtn = document.getElementById('btnBackToControlDesk');
+        if (backBtn) {
+          backBtn.style.display = 'inline-flex';
+          if (currentUser.role === 'admin') {
+            backBtn.href = 'admin.html';
+            backBtn.textContent = '← Back to Admin Desk';
+          } else {
+            backBtn.href = 'mis.html';
+            backBtn.textContent = '← Back to MIS Desk';
+          }
+        }
+      }
 
       // 1. Instant 0ms Paint from Local Cache
       loadCachedDataInstant();
@@ -493,6 +528,9 @@
 
       // 4. Shift Chime Clock
       initShiftChimes();
+
+      // 5. Pre-load request count
+      fetchMyRequests();
     });
 
     function loadCachedDataInstant() {
@@ -741,17 +779,89 @@
     }
 
     // ------------------------------------------------------------------------
-    // REQUEST NEW CALLER TO TEJAS MIS
+    // REQUEST NEW CALLER TO TEJAS MIS & MY REQUESTS STATUS
     // ------------------------------------------------------------------------
     function openRequestCallerModal() {
+      switchReqModalTab('new');
       document.getElementById('reqCallerName').value = '';
       document.getElementById('reqCallerTarget').value = '';
       document.getElementById('reqCallerReason').value = '';
       document.getElementById('requestCallerModal').style.display = 'flex';
+      fetchMyRequests();
     }
 
     function closeRequestCallerModal() {
       document.getElementById('requestCallerModal').style.display = 'none';
+    }
+
+    function switchReqModalTab(tab) {
+      var btnNew = document.getElementById('btnTabNewReq');
+      var btnMy = document.getElementById('btnTabMyReqs');
+      var paneNew = document.getElementById('tabContentNewReq');
+      var paneMy = document.getElementById('tabContentMyReqs');
+
+      if (tab === 'new') {
+        btnNew.style.background = '#09090b';
+        btnNew.style.color = '#fff';
+        btnMy.style.background = '#fff';
+        btnMy.style.color = '#334155';
+        paneNew.style.display = 'block';
+        paneMy.style.display = 'none';
+      } else {
+        btnMy.style.background = '#09090b';
+        btnMy.style.color = '#fff';
+        btnNew.style.background = '#fff';
+        btnNew.style.color = '#334155';
+        paneNew.style.display = 'none';
+        paneMy.style.display = 'block';
+        fetchMyRequests();
+      }
+    }
+
+    async function fetchMyRequests() {
+      var container = document.getElementById('myRequestsListContainer');
+      try {
+        var res = await fetch(SUPABASE_URL + '/rest/v1/users?username=like.__caller_request_%25&manager_key=eq.' + encodeURIComponent(currentManagerKey) + '&order=created_at.desc', {
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+        });
+        if (res.ok) {
+          var data = await res.json();
+          var list = [];
+          data.forEach(function(u) {
+            try {
+              var p = JSON.parse(u.display_name);
+              p._dbId = u.id;
+              list.push(p);
+            } catch(e) {}
+          });
+          var countEl = document.getElementById('myReqCount');
+          if (countEl) countEl.textContent = list.length;
+          if (list.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">No caller requests submitted yet.</div>';
+            return;
+          }
+          var html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+          list.forEach(function(r) {
+            var badge = r.status === 'pending'
+              ? '<span class="badge-status badge-pending">⏳ Pending Review</span>'
+              : (r.status === 'approved'
+                  ? '<span class="badge-status badge-logged">✓ Approved</span>'
+                  : '<span class="badge-status" style="background:#fee2e2; color:#991b1b;">✕ Rejected: ' + escapeHtml(r.rejection_reason || 'Declined') + '</span>');
+
+            html += '<div style="background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">' +
+              '<div>' +
+                '<div style="font-weight:800; font-size:13px; color:#09090b;">' + escapeHtml(r.officer_name) + '</div>' +
+                '<div style="font-size:11px; color:var(--text-muted);">' + (r.target > 0 ? ('Target: ₹ ' + formatNumber(r.target)) : 'No target') + ' · ' + (r.reason ? escapeHtml(r.reason) : 'Expansion') + '</div>' +
+              '</div>' +
+              '<div>' + badge + '</div>' +
+            '</div>';
+          });
+          html += '</div>';
+          container.innerHTML = html;
+        }
+      } catch(e) {
+        if (container) container.textContent = 'Unable to load requests history.';
+      }
     }
 
     async function submitCallerRequest(e) {
@@ -795,6 +905,7 @@
 
         closeRequestCallerModal();
         showToast("Request submitted to Tejas MIS for approval!", "success");
+        fetchMyRequests();
       } catch(err) {
         showToast("Request saved locally.", "warning");
         closeRequestCallerModal();
